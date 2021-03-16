@@ -14,6 +14,15 @@ substitutions:
 
 Replace `devicename` and `devicename_upper` with the desired values.
 
+> *ATTENTION* You will also need to create a file named `secrets.yaml` in the base folder with the following content:
+
+```yaml
+wifi_ssid: YourSSID
+wifi_password: "The password for your wifi"
+```
+
+The content of this file is used in `wifi.yaml`.
+
 ## Usage
 
 ```bash
