@@ -1,0 +1,7 @@
+esphome:
+  name: ${devicename}
+  platform: ESP8266
+  board: nodemcuv2
+
+packages:
+  wifi: !include wifi.yaml

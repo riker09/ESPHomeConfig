@@ -1,0 +1,177 @@
+substitutions:
+  devicename: drawer
+  devicename_upper: Drawer
+
+<<: !include ./.base.yaml
+
+wifi:
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${devicename_upper} Fallback Hotspot"
+    password: "OQMMDk93cB53"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# MQTT
+mqtt:
+  broker: "192.168.178.2"
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+
+## I2C
+i2c:
+  sda: 4
+  scl: 5
+  scan: true
+
+sensor:
+## BME680
+- platform: bme680
+  temperature:
+    name: "${devicename_upper} Temperature"
+    oversampling: 16x
+  pressure:
+    name: "${devicename_upper} Pressure"
+  humidity:
+    name: "${devicename_upper} Humidity"
+  gas_resistance:
+    name: "${devicename_upper} Gas Resistance"
+  address: 0x77
+  update_interval: 60s
+
+
+## 433 MHz
+
+# remote_receiver:
+#   pin: D1
+#   dump:
+#   - rc_switch
+#   tolerance: 50%
+#   filter: 250us
+#   idle: 4ms
+#   buffer_size: 2kb
+
+remote_transmitter:
+  pin: D3
+  carrier_duty_percent: 100%
+  id: rt433mhz
+
+switch:
+- platform: template
+  name: Button 1
+  optimistic: true
+  turn_on_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010001010101010101'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+  turn_off_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010001010101010100'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+
+- platform: template
+  name: Button 2
+  optimistic: true
+  turn_on_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010100010101010101'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+  turn_off_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010100010101010100'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+
+- platform: template
+  name: Button 3
+  optimistic: true
+  turn_on_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010101000101010101'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+  turn_off_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010101000101010100'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+
+- platform: template
+  name: Button 4
+  optimistic: true
+  turn_on_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010101010001010101'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+  turn_off_action:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010101010001010100'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
+
+
+# Channel I
+#      ON OFF
+# 1381717 1381716
+# 1394005 1394004
+# 1397077 1397076
+# 1397845 1397844
+
+
+# Channel II
+#      ON OFF
+# 4527445 4527444
+# 4539733 4539732
+# 4542805 4542804
+# 4543573 4543572
+
+
+# Channel III
+#      ON OFF
+# 5313877 5313876
+# 5326165 5326164
+# 5329237 5329236
+# 5330005 5330004
+
+
+# Channel IV
+#      ON OFF
+# 5510485 5510484
+# 5522773 5522772
+# 5525845 5525844
+# 5526613 5526612
