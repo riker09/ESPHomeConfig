@@ -4,26 +4,6 @@ substitutions:
 
 <<: !include ./.base.yaml
 
-wifi:
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: "${devicename_upper} Fallback Hotspot"
-    password: "OQMMDk93cB53"
-
-captive_portal:
-
-# Enable logging
-logger:
-
-# MQTT
-mqtt:
-  broker: "192.168.178.2"
-
-# Enable Home Assistant API
-api:
-
-ota:
-
 # Motion PIR
 # binary_sensor:
 # - platform: gpio

@@ -1,0 +1,46 @@
+substitutions:
+  devicename: stairs
+  devicename_upper: Stairs
+  timeout: 2s
+
+<<: !include .base.yaml
+
+binary_sensor:
+  ## PIR
+- platform: gpio
+  pin: D1
+  name: "${devicename_upper} Motion"
+  device_class: motion
+  on_press:
+    then:
+    - output.turn_on: led
+    - delay: ${timeout}
+    - output.turn_off: led
+
+  ## Button
+- platform: gpio
+  pin:
+    number: D5
+    mode: INPUT_PULLUP
+    inverted: true
+  id: button
+  on_press:
+    then:
+    - output.turn_on: led
+    - delay: ${timeout}
+    - output.turn_off: led
+
+output:
+- platform: gpio
+  pin: D6
+  id: led
+
+# sensor:
+# - platform: adc
+#   pin: A0
+#   name: "${devicename_upper} TEMT6000 Illuminance"
+#   unit_of_measurement: lx
+#   update_interval: 5s
+#   filters:
+#   - lambda: |-
+#       return (x / 10000.0) * 2000000.0;

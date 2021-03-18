@@ -5,3 +5,19 @@ esphome:
 
 packages:
   wifi: !include wifi.yaml
+
+wifi:
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${devicename_upper} Fallback Hotspot"
+    password: "gFtZZ79ce7iQ"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
