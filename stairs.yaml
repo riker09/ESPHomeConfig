@@ -28,6 +28,8 @@ binary_sensor:
       - script.is_running: stairs_leds
       then:
       - script.stop: stairs_leds
+      - light.turn_off:
+          id: strip
       else:
       - script.execute: stairs_leds
 
