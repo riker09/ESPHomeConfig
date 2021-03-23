@@ -2,6 +2,7 @@ substitutions:
   devicename: stairs
   devicename_upper: Stairs
   timeout: 30s
+  num_leds: "45"
 
 <<: !include .base.yaml
 
@@ -39,7 +40,7 @@ light:
   id: strip
   type: GRBW
   pin: GPIO3
-  num_leds: 20
+  num_leds: "${num_leds}"
   name: "${devicename_upper} LED Strip"
   effects:
   - addressable_rainbow:
