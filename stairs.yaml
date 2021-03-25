@@ -48,6 +48,7 @@ light:
   pin: GPIO3
   num_leds: "${num_leds}"
   name: "${devicename_upper} LED Strip"
+  restore_mode: ALWAYS_OFF
   effects:
   - addressable_rainbow:
       width: 10
@@ -71,25 +72,19 @@ light:
   - addressable_flicker:
       name: Flicker
 - platform: partition
-  internal: true
   id: step1
-  name: step1
   segments:
   - id: strip
     from: 0
     to: 14
 - platform: partition
-  internal: true
   id: step2
-  name: step2
   segments:
   - id: strip
     from: 15
     to: 29
 - platform: partition
-  internal: true
   id: step3
-  name: step3
   segments:
   - id: strip
     from: 30
