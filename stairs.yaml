@@ -47,6 +47,7 @@ light:
   type: GRBW
   pin: GPIO3
   num_leds: "${num_leds}"
+  gamma_correct: 1
   name: "${devicename_upper} LED Strip"
   restore_mode: ALWAYS_OFF
   effects:
