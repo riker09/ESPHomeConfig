@@ -99,8 +99,7 @@ sensor:
   unit_of_measurement: lx
   update_interval: 5s
   filters:
-  - lambda: |-
-      return (x / 10000.0) * 2000000.0;
+  - multiply: 200
   on_raw_value:
     ## Store current brightness value in global variable
   - globals.set:
@@ -120,9 +119,6 @@ script:
     ## Turn on the lights in proper order
   - light.turn_on: &color
       id: step1
-      red: 0%
-      blue: 0%
-      green: 0%
       white: !lambda |-
         return id(gwhite);
   - delay: ${step_delay}
