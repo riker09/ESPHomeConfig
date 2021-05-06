@@ -115,13 +115,13 @@ sensor:
   gas_resistance:
     name: "${devicename_upper} Gas Resistance"
   address: 0x77
-  update_interval: 60s
+  update_interval: 6s
 
 ## Fan speed
 - platform: pulse_counter
   pin: D4
   name: "${devicename_upper} Fan RPM"
-  update_interval: 5s
+  update_interval: 6s
   unit_of_measurement: rpm
   accuracy_decimals: 0
   icon: "mdi:fan"
