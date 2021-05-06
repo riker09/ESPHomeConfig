@@ -185,3 +185,13 @@ script:
     - fan.turn_on:
         id: "${devicename}_fan"
         speed: 5
+
+## Restart device once per day
+switch:
+- platform: restart
+  id: restart_switch
+interval:
+- interval: 24h
+  then:
+    - switch.toggle: restart_switch
+    
