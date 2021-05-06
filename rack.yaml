@@ -4,6 +4,38 @@ substitutions:
 
 <<: !include ./.base.yaml
 
+esphome:
+  name: ${devicename}
+  platform: ESP8266
+  board: nodemcuv2
+  on_boot:
+    priority: -10
+    then:
+    - script.execute: fan_off
+    - if:
+        condition:
+          sensor.in_range:
+            id: bme680_temp
+            below: 24.0
+        then:
+        - script.execute: led_blue
+    - if:
+        condition:
+          sensor.in_range:
+            id: bme680_temp
+            above: 24.0
+            below: 28.0
+        then:
+        - script.execute: led_green
+    - if:
+        condition:
+          sensor.in_range:
+            id: bme680_temp
+            above: 28.0
+        then:
+        - script.execute: led_red
+        - script.execute: fan_med
+      
 # Motion PIR
 # binary_sensor:
 # - platform: gpio
@@ -48,61 +80,37 @@ sensor:
 - platform: bme680
   temperature:
     name: "${devicename_upper} Temperature"
+    id: bme680_temp
     oversampling: 16x
     on_value_range:
-    ## BELOW 24°C > Set LED to blue, turn off fan
+    ## BELOW 24°C > Set LED to blue
     - below: 24.0
       then:
-      - light.turn_on:
-          id: "${devicename}_led"
-          red: 0
-          blue: 1
-          green: 0
-          brightness: .6
-      - fan.turn_off:
-          id: "${devicename}_fan"
+      - script.execute: led_blue
     ## ABOVE 24°C > Set LED to GREEN
     - above: 24.0
+      below: 28.0
       then:
-      - light.turn_on:
-          id: "${devicename}_led"
-          red: 0
-          blue: 0
-          green: 1
-          brightness: .6
-    ## ABOVE 26°C > Set FAN speed to LOW
+      - script.execute: led_green
+    ## BELOW 25°C > turn FAN OFF
+    - below: 25.0
+      then:
+      - script.execute: fan_off
+    ## ABOVE 26°C > turn FAN ON (LOW)
     - above: 26.0
+      below: 28.0
       then:
-      - fan.turn_on:
-          id: "${devicename}_fan"
-          speed: LOW
-    ## BELOW 28°C > Set LED to green
-    - below: 28.0
-      then:
-      - light.turn_on:
-          id: "${devicename}_led"
-          red: 0
-          blue: 0
-          green: 1
-          brightness: .6
+      - script.execute: fan_low
     ## ABOVE 28°C > Set LED to RED, set speed to MEDIUM
     - above: 28.0
+      below: 32.0
       then:
-      - light.turn_on:
-          id: "${devicename}_led"
-          red: 1
-          blue: 0
-          green: 0
-          brightness: .6
-      - fan.turn_on:
-          id: "${devicename}_fan"
-          speed: MEDIUM
+      - script.execute: led_red
+      - script.execute: fan_med
     ## ABOVE 32°C > Set speed speed to HIGH
     - above: 32.0
       then:
-      - fan.turn_on:
-          id: "${devicename}_fan"
-          speed: HIGH
+      - script.execute: fan_high
   pressure:
     name: "${devicename_upper} Pressure"
   humidity:
@@ -125,3 +133,58 @@ sensor:
 
 
 ## Automations
+script:
+  # LED
+  - id: led_blue
+    then:
+    - light.turn_on:
+        id: "${devicename}_led"
+        red: 0
+        blue: 1
+        green: 0
+        brightness: .6
+  - id: led_green
+    then:
+    - light.turn_on:
+        id: "${devicename}_led"
+        red: 0
+        blue: 0
+        green: 1
+        brightness: .6
+  - id: led_red
+    then:
+    - light.turn_on:
+        id: "${devicename}_led"
+        red: 1
+        blue: 0
+        green: 0
+        brightness: .6
+  - id: led_pink
+    then:
+    - light.turn_on:
+        id: "${devicename}_led"
+        red: 1
+        blue: 1
+        green: 0
+        brightness: .6
+
+  # FAN
+  - id: fan_off
+    then:
+    - fan.turn_off:
+        id: "${devicename}_fan"
+  - id: fan_low
+    then:
+    - fan.turn_on:
+        id: "${devicename}_fan"
+        speed: 1
+  - id: fan_med
+    then:
+    - fan.turn_on:
+        id: "${devicename}_fan"
+        speed: 3
+  - id: fan_high
+    then:
+    - fan.turn_on:
+        id: "${devicename}_fan"
+        speed: 5
