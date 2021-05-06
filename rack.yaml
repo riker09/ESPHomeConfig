@@ -47,18 +47,15 @@ output:
 - platform: esp8266_pwm
   pin: D3
   frequency: 25000 Hz
-  id: my_output_1
+  id: fan_output
 
 ## Fan
 fan:
 - platform: speed
-  output: my_output_1
+  output: fan_output
   name: "${devicename_upper} Fan"
   id: "${devicename}_fan"
-  speed:
-    low: 0.2     ## ca. 450rpm
-    medium: 0.5  ## ca. 1100 rpm
-    high: 0.8    ## ca. 1500 rpm
+  speed_count: 5
 
 ## LED
 light:
