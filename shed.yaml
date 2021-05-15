@@ -1,0 +1,31 @@
+substitutions:
+  devicename: shed
+  devicename_upper: Shed
+
+<<: !include ./.base.yaml
+
+sensor:
+## DHT22
+- platform: dht
+  pin: D2
+  temperature:
+    name: "${devicename_upper} Temperature"
+  humidity:
+    name: "${devicename_upper} Humidity"
+  update_interval: 6s
+
+## Brightness
+- platform: adc
+  pin: A0
+  name: "${devicename_upper} Illuminance"
+  unit_of_measurement: lx
+  filters:
+  - lambda: |-
+      return (x / 10000.0) * 2000000.0;
+
+## PIR Motion Sensor
+binary_sensor:
+- platform: gpio
+  pin: D1
+  name: "${devicename_upper} PIR"
+  device_class: motion
