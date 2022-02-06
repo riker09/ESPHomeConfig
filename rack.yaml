@@ -4,52 +4,23 @@ substitutions:
 
 <<: !include ./.base.yaml
 
-esphome:
-  name: ${devicename}
-  platform: ESP8266
-  board: nodemcuv2
-  on_boot:
-    priority: -10
-    then:
-    - script.execute: fan_off
-    - if:
-        condition:
-          sensor.in_range:
-            id: bme680_temp
-            below: 24.0
-        then:
-        - script.execute: led_blue
-    - if:
-        condition:
-          sensor.in_range:
-            id: bme680_temp
-            above: 24.0
-            below: 28.0
-        then:
-        - script.execute: led_green
-    - if:
-        condition:
-          sensor.in_range:
-            id: bme680_temp
-            above: 28.0
-        then:
-        - script.execute: led_red
-        - script.execute: fan_med
-      
-# Motion PIR
-# binary_sensor:
-# - platform: gpio
-#   pin: D4
-#   name: "Rack Movement"
-#   device_class: motion
+wifi:
+  fast_connect: true
+  manual_ip:
+    static_ip: 192.168.188.80
+    gateway: 192.168.188.1
+    subnet: 255.255.255.0
+    dns1: 192.168.188.4
+    dns2: 192.168.188.4
 
+## Fan Output (PWM)
 output:
 - platform: esp8266_pwm
   pin: D3
-  frequency: 25000 Hz
+  frequency: 25000Hz
   id: fan_output
 
-## Fan
+# ## Fan
 fan:
 - platform: speed
   output: fan_output
@@ -61,61 +32,89 @@ fan:
 light:
 - platform: neopixelbus
   type: GRB
+  variant: WS2812
   pin: GPIO3
   num_leds: 1
   name: "${devicename_upper} Light"
   id: "${devicename}_led"
+  effects:
+  - pulse:
+      name: "Fast pulse"
+      transition_length: 0.5s
+      update_interval: 0.5s
 
 ## I2C
 i2c:
   sda: 4
   scl: 5
-  scan: True
+  scan: false
+
+bme680_bsec:
+  address: 0x77
+  temperature_offset: 4
+  sample_rate: lp
+
+text_sensor:
+- platform: bme680_bsec
+  iaq_accuracy:
+    name: "${devicename_upper} IAQ Accuracy"
 
 sensor:
 ## BME680
-- platform: bme680
+- platform: bme680_bsec
   temperature:
     name: "${devicename_upper} Temperature"
     id: bme680_temp
-    oversampling: 16x
+    accuracy_decimals: 1
     on_value_range:
-    ## BELOW 24°C > Set LED to blue
+
+    ## < 24°C
     - below: 24.0
       then:
-      - script.execute: led_blue
-    ## ABOVE 24°C > Set LED to GREEN
+      - script.execute: led_blue   ## LED > blue
+
+    ## < 26°C
+    - below: 26.0
+      then:
+      - script.execute: fan_off    ## FAN > off
+
+    ## 24°C - 28°C
     - above: 24.0
       below: 28.0
       then:
-      - script.execute: led_green
-    ## BELOW 25°C > turn FAN OFF
-    - below: 25.0
-      then:
-      - script.execute: fan_off
-    ## ABOVE 26°C > turn FAN ON (LOW)
-    - above: 26.0
-      below: 28.0
-      then:
-      - script.execute: fan_low
-    ## ABOVE 28°C > Set LED to RED, set speed to MEDIUM
+      - script.execute: led_green  ## LED > green
+
+    ## 28°C - 30°C
     - above: 28.0
+      below: 30.0
+      then:
+      - script.execute: led_yellow ## LED > yellow
+      - script.execute: fan_low    ## FAN > low
+
+    ## > 30°C
+    - above: 30.0
       below: 32.0
       then:
-      - script.execute: led_red
-      - script.execute: fan_med
-    ## ABOVE 32°C > Set speed speed to HIGH
+      - script.execute: fan_med    ## FAN > medium
+
+    ## > 32°C
     - above: 32.0
       then:
-      - script.execute: fan_high
+      - script.execute: led_red    ## LED > red
+      - script.execute: fan_high   ## FAN > high
+
   pressure:
     name: "${devicename_upper} Pressure"
+    accuracy_decimals: 2
   humidity:
     name: "${devicename_upper} Humidity"
+    accuracy_decimals: 1
   gas_resistance:
     name: "${devicename_upper} Gas Resistance"
-  address: 0x77
-  update_interval: 6s
+    accuracy_decimals: 1
+  co2_equivalent:
+    name: "${devicename_upper} CO²"
+
 
 ## Fan speed
 - platform: pulse_counter
@@ -131,7 +130,15 @@ sensor:
 
 ## Automations
 script:
-  # LED
+  ## LED
+  # - id: led_pulsate
+  #   then:
+  #   - light.turn_on:
+  #       id: "${devicename}_led"
+  #       red: 1
+  #       blue: 1
+  #       green: 0
+  #       effect: pulse
   - id: led_blue
     then:
     - light.turn_on:
@@ -164,8 +171,16 @@ script:
         blue: 1
         green: 0
         brightness: .6
+  - id: led_yellow
+    then:
+    - light.turn_on:
+        id: "${devicename}_led"
+        red: 1
+        blue: 0
+        green: 1
+        brightness: .6
 
-  # FAN
+  ## FAN
   - id: fan_off
     then:
     - fan.turn_off:
@@ -185,13 +200,3 @@ script:
     - fan.turn_on:
         id: "${devicename}_fan"
         speed: 5
-
-## Restart device once per day
-switch:
-- platform: restart
-  id: restart_switch
-interval:
-- interval: 24h
-  then:
-    - switch.toggle: restart_switch
-    
