@@ -42,11 +42,10 @@ remote_transmitter:
   carrier_duty_percent: 100%
   id: rt433mhz
 
-switch:
+button:
 - platform: template
-  name: Button 1
-  optimistic: true
-  turn_on_action:
+  name: Stehlampe AN
+  on_press:
   - remote_transmitter.transmit_rc_switch_raw:
       code: '000101010001010101010101'
       protocol: 1
@@ -54,7 +53,9 @@ switch:
       repeat:
         times: 10
         wait_time: 0s
-  turn_off_action:
+- platform: template
+  name: Stehlampe AUS
+  on_press:
   - remote_transmitter.transmit_rc_switch_raw:
       code: '000101010001010101010100'
       protocol: 1
@@ -64,9 +65,8 @@ switch:
         wait_time: 0s
 
 - platform: template
-  name: Button 2
-  optimistic: true
-  turn_on_action:
+  name: Brettspiele AN
+  on_press:
   - remote_transmitter.transmit_rc_switch_raw:
       code: '000101010100010101010101'
       protocol: 1
@@ -74,19 +74,6 @@ switch:
       repeat:
         times: 10
         wait_time: 0s
-  turn_off_action:
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010100010101010100'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
-
-- platform: template
-  name: Button 3
-  optimistic: true
-  turn_on_action:
   - remote_transmitter.transmit_rc_switch_raw:
       code: '000101010101000101010101'
       protocol: 1
@@ -94,7 +81,16 @@ switch:
       repeat:
         times: 10
         wait_time: 0s
-  turn_off_action:
+- platform: template
+  name: Brettspiele AUS
+  on_press:
+  - remote_transmitter.transmit_rc_switch_raw:
+      code: '000101010100010101010100'
+      protocol: 1
+      transmitter_id: rt433mhz
+      repeat:
+        times: 10
+        wait_time: 0s
   - remote_transmitter.transmit_rc_switch_raw:
       code: '000101010101000101010100'
       protocol: 1
@@ -104,9 +100,8 @@ switch:
         wait_time: 0s
 
 - platform: template
-  name: Button 4
-  optimistic: true
-  turn_on_action:
+  name: Subwoofer AN
+  on_press:
   - remote_transmitter.transmit_rc_switch_raw:
       code: '000101010101010001010101'
       protocol: 1
@@ -114,7 +109,9 @@ switch:
       repeat:
         times: 10
         wait_time: 0s
-  turn_off_action:
+- platform: template
+  name: Subwoofer AUS
+  on_press:
   - remote_transmitter.transmit_rc_switch_raw:
       code: '000101010101010001010100'
       protocol: 1
