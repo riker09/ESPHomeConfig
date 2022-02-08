@@ -26,7 +26,7 @@ fan:
   output: fan_output
   name: "${devicename_upper} Fan"
   id: "${devicename}_fan"
-  speed_count: 5
+  speed_count: 100
 
 ## LED
 light:
@@ -53,11 +53,6 @@ bme680_bsec:
   address: 0x77
   temperature_offset: 4
   sample_rate: lp
-
-text_sensor:
-- platform: bme680_bsec
-  iaq_accuracy:
-    name: "${devicename_upper} IAQ Accuracy"
 
 sensor:
 ## BME680
@@ -91,16 +86,14 @@ sensor:
       - script.execute: led_yellow ## LED > yellow
       - script.execute: fan_low    ## FAN > low
 
-    ## > 30°C
-    - above: 30.0
-      below: 32.0
-      then:
-      - script.execute: fan_med    ## FAN > medium
-
     ## > 32°C
     - above: 32.0
       then:
       - script.execute: led_red    ## LED > red
+      - script.execute: fan_med    ## FAN > med
+
+    - above: 35.0
+      then:
       - script.execute: fan_high   ## FAN > high
 
   pressure:
@@ -185,18 +178,23 @@ script:
     then:
     - fan.turn_off:
         id: "${devicename}_fan"
+  - id: fan_on
+    then:
+    - fan.turn_on:
+        id: "${devicename}_fan"
+        speed: !lambda "return map(id(${devicename}_fan).state, 26, 32, 20, 80);"
   - id: fan_low
     then:
     - fan.turn_on:
         id: "${devicename}_fan"
-        speed: 1
+        speed: 20
   - id: fan_med
     then:
     - fan.turn_on:
         id: "${devicename}_fan"
-        speed: 3
+        speed: 50
   - id: fan_high
     then:
     - fan.turn_on:
         id: "${devicename}_fan"
-        speed: 5
+        speed: 90
