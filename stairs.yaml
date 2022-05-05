@@ -3,9 +3,20 @@ substitutions:
   devicename_upper: Stairs
   timeout: 30s
   step_delay: 0.2s
+  motion_delay: 5s
   num_leds: "45"
 
 <<: !include .base.yaml
+
+wifi:
+  fast_connect: true
+  manual_ip:
+    static_ip: 192.168.188.81
+    gateway: 192.168.188.1
+    subnet: 255.255.255.0
+    dns1: 192.168.188.4
+    dns2: 192.168.188.4
+
 globals:
 - id: gwhite
   type: double
@@ -18,9 +29,9 @@ binary_sensor:
   pin: D1
   name: "${devicename_upper} Motion"
   device_class: motion
-  on_press:
-    then:
-    - script.execute: stairs_leds
+  # on_press:
+  #   then:
+  #   - script.execute: stairs_leds
 
   ## Button
 - platform: gpio
@@ -38,36 +49,39 @@ binary_sensor:
       - light.turn_off:
           id: strip
       else:
+      - light.turn_off: strip
       - script.execute: stairs_leds
 
 ## LED Strip
 light:
 - platform: neopixelbus
-  id: strip
+  variant: SK6812
   type: GRBW
   pin: GPIO3
   num_leds: "${num_leds}"
-  gamma_correct: 1
+  id: strip
   name: "${devicename_upper} LED Strip"
   restore_mode: ALWAYS_OFF
   effects:
   - addressable_rainbow:
-      width: 10
+      width: 45
   - addressable_color_wipe:
       name: Police
-      add_led_interval: 200ms
+      add_led_interval: 50ms
       colors:
       - red: 100%
         blue: 0%
         green: 0%
         white: 0%
-        num_leds: 3
+        num_leds: 15
       - red: 0%
         blue: 100%
         green: 0%
         white: 0%
-        num_leds: 3
+        num_leds: 15
   - addressable_scan:
+      scan_width: 3
+      move_interval: 20ms
   - addressable_twinkle:
   - addressable_fireworks:
   - addressable_flicker:
@@ -84,6 +98,7 @@ light:
   - id: strip
     from: 15
     to: 29
+    reversed: true
 - platform: partition
   id: step3
   segments:
@@ -100,17 +115,17 @@ sensor:
   update_interval: 5s
   filters:
   - multiply: 200
-  on_raw_value:
-    ## Store current brightness value in global variable
-  - globals.set:
-      id: gwhite
-      value: !lambda |-
-        if (x < 0.1) {
-          return (double) 0.1;
-        } else if (x > 1) {
-          return (double) 1;
-        }
-        return (double) (x);
+  # on_raw_value:
+  #   ## Store current brightness value in global variable
+  # - globals.set:
+  #     id: gwhite
+  #     value: !lambda |-
+  #       if (x < 0.1) {
+  #         return (double) 0.1;
+  #       } else if (x > 1) {
+  #         return (double) 1;
+  #       }
+  #       return (double) (x);
 
 script:
 - id: stairs_leds
@@ -119,8 +134,17 @@ script:
     ## Turn on the lights in proper order
   - light.turn_on: &color
       id: step1
-      white: !lambda |-
-        return id(gwhite);
+      color_mode: RGB_WHITE
+      brightness: 1
+      color_brightness: 0 ## Required to keep the RGB leds off
+      white: 0.4
+      red: 0
+      blue: 0
+      green: 0
+      # white: !lambda |-
+      #   return id(gwhite);
+      # brightness: !lambda |-
+      #   return id(gwhite);
   - delay: ${step_delay}
   - light.turn_on:
       <<: *color
@@ -131,7 +155,7 @@ script:
       id: step3
 
     ## Wait a few seconds
-  - delay: 5s
+  - delay: ${motion_delay}
 
     ## Start turning things off again
   - light.turn_off: step1
