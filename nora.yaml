@@ -26,28 +26,21 @@ sensor:
   resolution: 4
   on_value:
     then:
-      ## Default: White Brightness
-    - if:
-        condition:
-          lambda: 'if (id(current_mode).state == "brightness") { return true; } else { return false; }'
-        then:
-        - script.execute: white_light
       ## Color
     - if:
         condition:
           lambda: 'if (id(current_mode).state == "color") { return true; } else { return false; }'
         then:
         - script.execute: colored_light
-      ## Color Brightness
+      ## Brightness
     - if:
         condition:
-          lambda: 'if (id(current_mode).state == "color_brightness") { return true; } else { return false; }'
+          lambda: 'if (id(current_mode).state == "brightness") { return true; } else { return false; }'
         then:
         - light.turn_on:
             id: strip
             white: 0%
-            brightness: 100%
-            color_brightness: !lambda "return x / 255.0;"
+            brightness: !lambda "return x / 255.0;"
 
 
 binary_sensor:
@@ -59,13 +52,6 @@ binary_sensor:
   filters:
   - delayed_on: 10ms
   - delayed_off: 10ms
-  ## Start a 3s timer when holding the button and turn off strip
-  on_press:
-    then:
-    - script.execute: start_timer
-  on_release:
-    then:
-    - script.stop: start_timer
   on_click:
     ## Short press
   - then:
@@ -73,22 +59,33 @@ binary_sensor:
         condition:
           light.is_off: strip
         then:
-        - light.turn_on: strip
+        - script.execute: colored_light
         else:
-        - script.execute: next_mode
+          ## Check if effect is running
+        - if:
+            condition:
+              lambda: return id(strip).get_effect_name() != "None";
+            then:
+            - script.execute: colored_light
+            else:
+            - script.execute: next_mode
     ## Long press
   - min_length: 1000ms
     max_length: 3000ms
     then:
-    - light.toggle: strip
+    - light.turn_off: strip
+  ## Double click
+  on_double_click:
+    then:
+    - script.execute: next_effect
 
 
 light:
 - platform: neopixelbus
-  type: GRBW
-  variant: WS2813
+  type: GRB
+  variant: WS2812
   pin: D2
-  num_leds: 10
+  num_leds: 117
   restore_mode: ALWAYS_OFF
   id: strip
   name: "Strip"
@@ -108,32 +105,26 @@ select:
   internal: true
   optimistic: true
   options:
-  - brightness
   - color
-  - color_brightness
+  - brightness
   on_value:
   - logger.log:
       format: "CURRENT STATE IS: %s"
       args: ['x.c_str()']
+
 
 globals:
 - id: current_mode_int
   type: int
   restore_value: no
   initial_value: '0'
+- id: current_effect_int
+  type: int
+  restore_value: no
+  initial_value: '0'
+
 
 script:
-  ## Turn off strip if button press > 3s
-- id: start_timer
-  mode: restart
-  then:
-  - delay: 1s
-  - wait_until:
-      condition:
-        binary_sensor.is_off: button
-      timeout: 1s
-  - light.turn_off: strip
-
   ## Script for activating colored light
 - id: colored_light
   then:
@@ -159,28 +150,17 @@ script:
       }
 
       auto call = id(strip).turn_on();
-      call.set_color_mode(ColorMode::RGB_WHITE);
-      call.set_brightness(1.0);
-      call.set_color_brightness(0.6);
-      call.set_white(0);
+      call.set_brightness(0.6);
+      call.set_color_mode(ColorMode::RGB);
       call.set_rgb(r / 255, g / 255, b / 255);
       call.perform();
-
-  ## Script for activating white light
-- id: white_light
-  then:
-  - light.turn_on:
-      id: strip
-      white: 100%
-      brightness: !lambda 'return id(knob).state / 255;'
-      color_brightness: 0%
 
   ## Whenever this script is called the next mode is activated
 - id: next_mode
   then:
     ## Set next mode
   - lambda: |-
-      if (id(current_mode_int) < 2) {
+      if (id(current_mode_int) < 1) {
         id(current_mode_int) += 1;
       } else {
         id(current_mode_int) = 0;
@@ -190,21 +170,35 @@ script:
         case 1:
           id(current_mode).publish_state("color");
           break;
-        case 2:
-          id(current_mode).publish_state("color_brightness");
-          break;
         default:
           id(current_mode).publish_state("brightness");
           break;
       }
-    ## After changing mode, update the current light state (white / colored)
-  - if:
-      condition:
-        lambda: 'if (id(current_mode).state == "brightness") { return true; } else { return false; }'
-      then:
-      - script.execute: white_light
-  - if:
-      condition:
-        lambda: 'if (id(current_mode).state == "color") { return true; } else { return false; }'
-      then:
-      - script.execute: colored_light
+
+- id: next_effect
+  then:
+  - lambda: |-
+      if (id(current_effect_int) < 3) {
+        id(current_effect_int) += 1;
+      } else {
+        id(current_effect_int) = 0;
+      }
+
+      auto call = id(strip).turn_on();
+
+      switch(id(current_effect_int)) {
+        case 1:
+          call.set_effect("Color Wipe");
+          break;
+        case 2:
+          call.set_effect("Scan");
+          break;
+        case 3:
+          call.set_effect("Pulse");
+          break;
+        default:
+          call.set_effect("Rainbow");
+          break;
+      }
+
+      call.perform();
