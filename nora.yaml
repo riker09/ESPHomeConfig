@@ -93,10 +93,18 @@ light:
   effects:
   - addressable_rainbow:
   - addressable_color_wipe:
+      colors:
+        random: true
+        num_leds: 3
   - addressable_scan:
-      scan_width: 3
+      move_interval: 50ms
+      scan_width: 5
+  - addressable_twinkle:
   - pulse:
-
+  - addressable_fireworks:
+  - addressable_fireworks:
+      name: Random Fireworks
+      use_random_color: true
 
 select:
   ## Current Mode
@@ -178,7 +186,7 @@ script:
 - id: next_effect
   then:
   - lambda: |-
-      if (id(current_effect_int) < 3) {
+      if (id(current_effect_int) < 6) {
         id(current_effect_int) += 1;
       } else {
         id(current_effect_int) = 0;
@@ -194,6 +202,15 @@ script:
           call.set_effect("Scan");
           break;
         case 3:
+          call.set_effect("Twinkle");
+          break;
+        case 4:
+          call.set_effect("Fireworks");
+          break;
+        case 5:
+          call.set_effect("Random Fireworks");
+          break;
+        case 6:
           call.set_effect("Pulse");
           break;
         default:
