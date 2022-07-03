@@ -1,0 +1,84 @@
+substitutions:
+  devicename: bedroom
+  devicename_upper: Bedroom
+
+<<: !include ./.base.yaml
+
+
+## LED
+light:
+- platform: neopixelbus
+  type: GRB
+  variant: WS2812
+  pin: D3
+  num_leds: 2
+  name: "${devicename_upper} LED Strip"
+  id: "${devicename}_strip"
+  effects:
+  - pulse:
+      name: "Fast pulse"
+      transition_length: 0.5s
+      update_interval: 0.5s
+
+## I2C
+i2c:
+  scl: D1
+  sda: D2
+  scan: false
+
+bme680_bsec:
+  address: 0x76
+  # temperature_offset: 4
+  sample_rate: lp
+
+sensor:
+## BME680
+- platform: bme680_bsec
+  temperature:
+    name: "${devicename_upper} Temperature"
+    id: bme680_temp
+    accuracy_decimals: 1
+  pressure:
+    name: "${devicename_upper} Pressure"
+    accuracy_decimals: 2
+  humidity:
+    name: "${devicename_upper} Humidity"
+    accuracy_decimals: 1
+  co2_equivalent:
+    name: "${devicename_upper} CO²"
+
+## Rotary Encoder
+- platform: rotary_encoder
+  pin_a: D6 # brown
+  pin_b: D7 # red
+  id: knob
+  restore_mode: ALWAYS_ZERO
+  min_value: 0
+  max_value: 255
+  resolution: 4
+
+binary_sensor:
+- platform: gpio
+  pin:
+    number: D8
+    inverted: true
+  id: button
+  filters:
+  - delayed_on: 10ms
+  - delayed_off: 10ms
+  on_click:
+    ## Short press
+  - then:
+      light.toggle: ${devicename}_strip
+
+## Automations
+# script:
+  ## LED
+  # - id: led_pulsate
+  #   then:
+  #   - light.turn_on:
+  #       id: "${devicename}_led"
+  #       red: 1
+  #       blue: 1
+  #       green: 0
+  #       effect: pulse
