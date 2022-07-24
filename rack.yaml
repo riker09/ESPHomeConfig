@@ -1,6 +1,7 @@
 substitutions:
   devicename: rack
   devicename_upper: Rack
+  $friendly_name: Rack
 
 <<: !include ./.base.yaml
 
@@ -13,6 +14,49 @@ wifi:
     dns1: 192.168.188.4
     dns2: 192.168.188.4
 
+##
+
+## RECEIVE kp,ki and kd parameters from input_text.kx helpers in
+# Home Assistant. See the PID controller below
+# These helper values will get saved to flash thus permanently over-riding
+# the initial values set in the PID below.
+number:
+# KP
+- platform: template
+  name: $friendly_name kp
+  icon: mdi:chart-bell-curve
+  restore_value: true
+  min_value: 0
+  max_value: 50
+  step: 0.001
+  set_action:
+    lambda: |-
+      // ESP_LOGI("main", "!!!!!! kp from boot %d", id("rack_fan_kp") );
+      // id(rack_thermostat).set_kp( id("$friendly_name kp") );
+      id(rack_thermostat).set_kp( x );
+# KI
+- platform: template
+  name: $friendly_name ki
+  icon: mdi:chart-bell-curve
+  restore_value: true
+  min_value: 0
+  max_value: 50
+  step: 0.0001
+  set_action:
+    lambda: id(rack_thermostat).set_ki( x );
+
+# KD
+- platform: template
+  name: $friendly_name kd
+  icon: mdi:chart-bell-curve
+  restore_value: true
+  min_value: -50
+  max_value: 50
+  step: 0.001
+  set_action:
+    lambda: id(rack_thermostat).set_kd( x );
+
+
 ## Fan Output (PWM)
 output:
 - platform: esp8266_pwm
@@ -24,7 +68,7 @@ output:
 fan:
 - platform: speed
   output: fan_output
-  name: "${devicename_upper} Fan"
+  name: "${devicename_upper} Fan Speed"
   id: "${devicename}_fan"
   speed_count: 100
 
@@ -61,41 +105,16 @@ sensor:
     name: "${devicename_upper} Temperature"
     id: bme680_temp
     accuracy_decimals: 1
-    on_value_range:
-
-    ## < 24°C
-    - below: 24.0
-      then:
-      - script.execute: led_blue   ## LED > blue
-
-    ## < 26°C
-    - below: 26.0
-      then:
-      - script.execute: fan_off    ## FAN > off
-
-    ## 24°C - 28°C
-    - above: 24.0
-      below: 28.0
-      then:
-      - script.execute: led_green  ## LED > green
-
-    ## 28°C - 30°C
-    - above: 28.0
-      below: 30.0
-      then:
-      - script.execute: led_yellow ## LED > yellow
-      - script.execute: fan_low    ## FAN > low
-
-    ## > 32°C
-    - above: 32.0
-      then:
-      - script.execute: led_red    ## LED > red
-      - script.execute: fan_med    ## FAN > med
-
-    - above: 35.0
-      then:
-      - script.execute: fan_high   ## FAN > high
-
+    # If you don't smooth the output readings
+    # the PID controller over reacts to small changes.
+    filters:
+      # - sliding_window_moving_average:
+      #     window_size: 6
+      #     send_every: 1
+      #     send_first_at: 1
+      - exponential_moving_average:
+          alpha: 0.1
+          send_every: 1
   pressure:
     name: "${devicename_upper} Pressure"
     accuracy_decimals: 2
@@ -119,6 +138,104 @@ sensor:
   icon: "mdi:fan"
   filters:
   - multiply: 0.5
+
+# Take the "COOL" value of the pid and send
+# it to the frontend to graph the output voltage
+- platform: pid
+  name: "Fan Speed (PWM Voltage)"
+  climate_id: rack_thermostat
+  type: COOL
+
+########################################################
+# START THE FAN CONTROLLER SETUP
+
+- platform: template
+  name: $friendly_name p term
+  id: p_term
+  unit_of_measurement: "%"
+  accuracy_decimals: 2
+
+- platform: template
+  name: $friendly_name i term
+  id: i_term
+  unit_of_measurement: "%"
+  accuracy_decimals: 2
+
+- platform: template
+  name: $friendly_name d term
+  id: d_term
+  unit_of_measurement: "%"
+  accuracy_decimals: 2
+
+- platform: template
+  name: $friendly_name output value
+  unit_of_measurement: "%"
+  id: o_term
+  accuracy_decimals: 2
+
+- platform: template
+  name: $friendly_name error value
+  id: e_term
+  accuracy_decimals: 2
+
+- platform: template
+  name: $friendly_name zero
+  id: zero_value
+  update_interval: 60s
+  lambda: |-
+    return 0;
+- platform: template
+  name: $friendly_name zero percent
+  unit_of_measurement: "%"
+  id: zero_value_percent
+  update_interval: 60s
+  lambda: |-
+    return 0;
+
+# Expose a PID-controlled Thermostat
+# Manual: https://esphome.io/components/climate/pid.html
+climate:
+  - platform: pid
+    name: "Rack Fan Thermostat"
+    id: rack_thermostat
+    sensor: bme680_temp
+
+    # It is summer right now, so 30c is a decent target.
+    default_target_temperature: 28°C
+    cool_output: fan_output
+
+    on_state:
+      - sensor.template.publish:
+          id: p_term
+          state: !lambda 'return -id(rack_thermostat).get_proportional_term() * 100.0;'
+      - sensor.template.publish:
+          id: i_term
+          state: !lambda 'return -id(rack_thermostat).get_integral_term()* 100.0;'
+      - sensor.template.publish:
+          id: d_term
+          state: !lambda 'return -id(rack_thermostat).get_derivative_term()* 100.0;'
+      - sensor.template.publish:
+          id: o_term
+          state: !lambda 'return -id(rack_thermostat).get_output_value()* 100.0;'
+      - sensor.template.publish:
+          id: e_term
+          state: !lambda 'return -id(rack_thermostat).get_error_value();'
+
+    # dummy heater. enable this if using autotune
+    # heat_output: rack_heat_speed
+
+    # The extents of the HA Thermostat
+    visual:
+      min_temperature: 20 °C
+      max_temperature: 40 °C
+
+    # See the README for setting up these parameters.
+    # These are over ridden by the number templates above.
+    control_parameters:
+      kp: 0.15
+      ki: 0.004
+      kd: 0.5
+      max_integral: 0.0
 
 
 ## Automations
@@ -172,29 +289,3 @@ script:
         blue: 0
         green: 1
         brightness: .6
-
-  ## FAN
-  - id: fan_off
-    then:
-    - fan.turn_off:
-        id: "${devicename}_fan"
-  - id: fan_on
-    then:
-    - fan.turn_on:
-        id: "${devicename}_fan"
-        speed: !lambda "return map(id(${devicename}_fan).state, 26, 32, 20, 80);"
-  - id: fan_low
-    then:
-    - fan.turn_on:
-        id: "${devicename}_fan"
-        speed: 20
-  - id: fan_med
-    then:
-    - fan.turn_on:
-        id: "${devicename}_fan"
-        speed: 50
-  - id: fan_high
-    then:
-    - fan.turn_on:
-        id: "${devicename}_fan"
-        speed: 90
