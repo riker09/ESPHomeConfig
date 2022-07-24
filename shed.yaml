@@ -4,15 +4,38 @@ substitutions:
 
 <<: !include ./.base.yaml
 
+i2c:
+  sda: GPIO4
+  scl: GPIO5
+
+bme680_bsec:
+  address: 0x77
+  sample_rate: lp
+
 sensor:
-## DHT22
-- platform: dht
-  pin: D2
+- platform: bme680_bsec
   temperature:
     name: "${devicename_upper} Temperature"
+    filters:
+      - median
   humidity:
     name: "${devicename_upper} Humidity"
-  update_interval: 6s
+    filters:
+      - median
+  pressure:
+    name: "${devicename_upper} Pressure"
+    filters:
+      - median
+  co2_equivalent:
+    # CO2 equivalent estimate in ppm
+    name: "${devicename_upper} CO2 Equivalent"
+    filters:
+      - median
+  breath_voc_equivalent:
+    # Volatile organic compounds equivalent estimate in ppm
+    name: "${devicename_upper} Breath VOC Equivalent"
+    filters:
+      - median
 
 ## Brightness
 - platform: adc
@@ -26,6 +49,6 @@ sensor:
 ## PIR Motion Sensor
 binary_sensor:
 - platform: gpio
-  pin: D1
+  pin: D8
   name: "${devicename_upper} PIR"
   device_class: motion
