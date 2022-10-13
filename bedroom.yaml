@@ -11,14 +11,15 @@ light:
   type: GRB
   variant: WS2812
   pin: D3
-  num_leds: 2
+  num_leds: 179
   name: "${devicename_upper} LED Strip"
   id: "${devicename}_strip"
   effects:
   - pulse:
-      name: "Fast pulse"
-      transition_length: 0.5s
-      update_interval: 0.5s
+  - addressable_rainbow:
+  - addressable_color_wipe:
+      reverse: true
+  - addressable_scan:
 
 ## I2C
 i2c:
@@ -27,7 +28,7 @@ i2c:
   scan: false
 
 bme680_bsec:
-  address: 0x76
+  address: 0x77
   # temperature_offset: 4
   sample_rate: lp
 
@@ -56,11 +57,17 @@ sensor:
   min_value: 0
   max_value: 255
   resolution: 4
+  on_value:
+    then:
+    - light.turn_on:
+        id: ${devicename}_strip
+        brightness: !lambda "return x / 255.0;"
 
+## Rotary Push Button
 binary_sensor:
 - platform: gpio
   pin:
-    number: D8
+    number: D5
     inverted: true
   id: button
   filters:
@@ -69,16 +76,57 @@ binary_sensor:
   on_click:
     ## Short press
   - then:
-      light.toggle: ${devicename}_strip
+    - light.turn_on: ${devicename}_strip
+    ## Long press
+  - min_length: 1000ms
+    max_length: 3000ms
+    then:
+    - light.turn_off: ${devicename}_strip
+  on_double_click:
+    then:
+    - script.execute: next_effect
+
+## Globals
+globals:
+- id: current_effect_int
+  type: int
+  restore_value: no
+  initial_value: '0'
 
 ## Automations
-# script:
-  ## LED
-  # - id: led_pulsate
-  #   then:
-  #   - light.turn_on:
-  #       id: "${devicename}_led"
-  #       red: 1
-  #       blue: 1
-  #       green: 0
-  #       effect: pulse
+script:
+- id: next_effect
+  then:
+  - script.execute: advance_effect
+  - script.execute: show_effect
+
+- id: advance_effect
+  then:
+  - lambda: |-
+      if (id(current_effect_int) < 3) {
+        id(current_effect_int) += 1;
+      } else {
+        id(current_effect_int) = 0;
+      }
+
+- id: show_effect
+  then:
+  - lambda: |-
+      auto call = id(${devicename}_strip).turn_on();
+
+      switch(id(current_effect_int)) {
+        default:
+          call.set_effect("Rainbow");
+          break;
+        case 1:
+          call.set_effect("Color Wipe");
+          break;
+        case 2:
+          call.set_effect("Scan");
+          break;
+        case 3:
+          call.set_effect("Pulse");
+          break;
+      }
+
+      call.perform();
