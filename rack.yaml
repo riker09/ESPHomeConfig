@@ -83,7 +83,7 @@ light:
   id: "${devicename}_led"
   effects:
   - pulse:
-      name: "Fast pulse"
+      name: Pulse
       transition_length: 0.5s
       update_interval: 0.5s
 
@@ -115,6 +115,17 @@ sensor:
       - exponential_moving_average:
           alpha: 0.1
           send_every: 1
+    on_value_range:
+    - below: 26
+      then:
+      - script.execute: led_blue
+    - above: 26
+      below: 30
+      then:
+      - script.execute: led_green
+    - above: 30
+      then:
+      - script.execute: led_red
   pressure:
     name: "${devicename_upper} Pressure"
     accuracy_decimals: 2
