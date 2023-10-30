@@ -5,16 +5,6 @@ substitutions:
 
 <<: !include ./.base.yaml
 
-wifi:
-  fast_connect: true
-  manual_ip:
-    static_ip: 192.168.188.80
-    gateway: 192.168.188.1
-    subnet: 255.255.255.0
-    dns1: 192.168.188.4
-    dns2: 192.168.188.4
-
-##
 
 ## RECEIVE kp,ki and kd parameters from input_text.kx helpers in
 # Home Assistant. See the PID controller below
