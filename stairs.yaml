@@ -4,6 +4,8 @@ substitutions:
 
   ## Number of LEDs in strip (15 per stair)
   num_leds: "45"
+  ## 15 LEDs x 15 stairs = 225 LEDs in strip
+  # num_leds: "225"
 
   ## Time between toggling on/off the stairs
   step_delay: 0.5s
@@ -88,6 +90,7 @@ light:
   - addressable_fireworks:
   - addressable_flicker:
       name: Flicker
+# Separate full strip into 15 partitions (steps / stairs)
 - platform: partition
   id: step1
   segments:
@@ -107,6 +110,78 @@ light:
   - id: strip
     from: 30
     to: 44
+# - platform: partition
+#   id: step4
+#   segments:
+#   - id: strip
+#     from: 45
+#     to: 59
+# - platform: partition
+#   id: step5
+#   segments:
+#   - id: strip
+#     from: 60
+#     to: 74
+# - platform: partition
+#   id: step6
+#   segments:
+#   - id: strip
+#     from: 75
+#     to: 89
+# - platform: partition
+#   id: step7
+#   segments:
+#   - id: strip
+#     from: 90
+#     to: 104
+# - platform: partition
+#   id: step8
+#   segments:
+#   - id: strip
+#     from: 105
+#     to: 119
+# - platform: partition
+#   id: step9
+#   segments:
+#   - id: strip
+#     from: 120
+#     to: 134
+# - platform: partition
+#   id: step10
+#   segments:
+#   - id: strip
+#     from: 135
+#     to: 149
+# - platform: partition
+#   id: step11
+#   segments:
+#   - id: strip
+#     from: 150
+#     to: 164
+# - platform: partition
+#   id: step12
+#   segments:
+#   - id: strip
+#     from: 165
+#     to: 179
+# - platform: partition
+#   id: step13
+#   segments:
+#   - id: strip
+#     from: 190
+#     to: 194
+# - platform: partition
+#   id: step14
+#   segments:
+#   - id: strip
+#     from: 195
+#     to: 209
+# - platform: partition
+#   id: step15
+#   segments:
+#   - id: strip
+#     from: 210
+#     to: 224
 
 script:
 - id: stairs_leds
@@ -133,6 +208,42 @@ script:
   - light.turn_on:
       <<: *color
       id: step3
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step4
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step5
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step6
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step7
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step8
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step9
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step10
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step11
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step12
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step13
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step14
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step15
 
     ## Wait a few seconds
   - delay: !lambda return delay_ms;
@@ -143,3 +254,27 @@ script:
   - light.turn_off: step2
   - delay: ${step_delay}
   - light.turn_off: step3
+  # - delay: ${step_delay}
+  # - light.turn_off: step4
+  # - delay: ${step_delay}
+  # - light.turn_off: step5
+  # - delay: ${step_delay}
+  # - light.turn_off: step6
+  # - delay: ${step_delay}
+  # - light.turn_off: step7
+  # - delay: ${step_delay}
+  # - light.turn_off: step8
+  # - delay: ${step_delay}
+  # - light.turn_off: step9
+  # - delay: ${step_delay}
+  # - light.turn_off: step10
+  # - delay: ${step_delay}
+  # - light.turn_off: step11
+  # - delay: ${step_delay}
+  # - light.turn_off: step12
+  # - delay: ${step_delay}
+  # - light.turn_off: step13
+  # - delay: ${step_delay}
+  # - light.turn_off: step14
+  # - delay: ${step_delay}
+  # - light.turn_off: step15
