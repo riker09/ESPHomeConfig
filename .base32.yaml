@@ -2,9 +2,8 @@ esphome:
   name: ${devicename}
   friendly_name: ${devicename_upper}
 
-esp8266:
-  platform: ESP8266
-  board: nodemcuv2
+esp32:
+  board: esp32doit-devkit-v1
 
 packages:
   wifi: !include wifi.yaml
