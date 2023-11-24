@@ -31,6 +31,24 @@ switch:
     turn_off_action:
       lambda: |-
         id(aab_enable) = false;
+    ## Getting Dressed Helper
+    ## When enabled, change clock color on work days from white to yellow to red
+  - platform: template
+    name: "Getting Dressed Hint"
+    id: switch_getting_dressed_hint
+    restore_mode: RESTORE_DEFAULT_ON
+    lambda: |-
+      if (id(gdh_enable)) {
+        return true;
+      } else {
+        return false;
+      }
+    turn_on_action:
+      lambda: |-
+        id(gdh_enable) = true;
+    turn_off_action:
+      lambda: |-
+        id(gdh_enable) = false;
 
 globals:
   # aab = auto-adjustable brightness
@@ -47,6 +65,11 @@ globals:
   - id: aab_min
     type: int
     initial_value: '20'
+  # gdh = getting dressed hint
+  - id: gdh_enable
+    type: "bool"
+    restore_value: true
+    initial_value: "true"
 
 external_components:
   - source:
@@ -141,8 +164,10 @@ sensor:
   - platform: sht3xd
     temperature:
       name: "$devicename Temperature"
+      id: sensor_temperature
     humidity:
       name: "$devicename Relative Humidity"
+      id: sensor_humidity
     update_interval: 60s
   - platform: adc
     pin: $battery_pin
@@ -227,6 +252,40 @@ time:
   - platform: ds1307
     update_interval: never
     id: ehmtx_time
+    on_time:
+      - seconds: /10
+        minutes: 45-59
+        hours: 6
+        days_of_week: MON-FRI
+        then:
+        - lambda: |-
+            auto time = id(ehmtx_time).now();
+            if (id(gdh_enable)) {
+              // Super sophisticated percentage calculation for RED value
+              int s = time.second + (time.minute - 45) * 60;
+              int r = s / 900 * 255;
+              id(rgb8x32)->set_clock_color(r, 255, 0);
+            }
+      - seconds: /10
+        minutes: 0-10
+        hours: 7
+        days_of_week: MON-FRI
+        then:
+        - lambda: |-
+            auto time = id(ehmtx_time).now();
+            if (id(gdh_enable)) {
+              // Super sophisticated percentage calculation for GREEN value
+              int s = time.second + time.minute * 60;
+              int g = 255 - s / 600 * 255;
+              id(rgb8x32)->set_clock_color(255, g, 0);
+            }
+      - seconds: 0
+        minutes: 15
+        hours: 7
+        days_of_week: MON-FRI
+        then:
+        - lambda: |-
+            id(rgb8x32)->set_clock_color(255, 255, 255);
 
 display:
   - platform: addressable_light
@@ -263,7 +322,6 @@ ehmtxv2:
   special_font_id: special_font
   special_font_yoffset: 6
   # until here
-  # boot_logo: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,63519,63519,63519,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,0,0,0,0,2016,0,0,0,0,0,0,0,0,0,0,31,0,0,0,0,0,0,0,0,0,63488,0,63488,0,0,0,63519,0,0,0,0,2016,2016,0,0,0,65514,0,65514,0,0,0,31,0,0,0,64512,0,0,64512,0,63488,63488,0,63488,63488,0,0,63519,63519,63519,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,31,31,31,0,0,0,64512,64512,0,0,63488,63488,63488,63488,63488,0,0,63519,0,0,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,31,0,0,0,0,64512,64512,0,0,0,63488,63488,63488,0,0,0,63519,63519,63519,63519,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,0,31,31,0,64512,0,0,64512,0,0,0,63488,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]"
   blend_steps: 16
   week_start_monday: true
   weekdays: SOMODIMIDOFRSA
@@ -274,14 +332,14 @@ ehmtxv2:
       lameid: 47693
     - id: temperature
       lameid: 2056
-    - id: lightbulb
-      lameid: 1762
-    - id: music
-      lameid: 45625
-    - id: phone
-      lameid: 1232
-    - id: car
-      lameid: 2819
+    - id: tv
+      lameid: 7862
+    - id: humidity
+      lameid: 48556
+    - id: washing_running
+      lameid: 54281
+    - id: washing_done
+      lameid: 54282
     - id: sleep8x32
       url: https://user-images.githubusercontent.com/16407309/224850723-634c9b2d-55d9-44f2-9f93-765c0485b090.gif
   on_next_screen:
@@ -296,9 +354,9 @@ ehmtxv2:
         id(rgb8x32)->clock_screen(10,10);
         id(rgb8x32)->date_screen(10,5);
   on_start_running:
-     then:
-       lambda: |-
-          id(rgb8x32)->bitmap_screen("[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,63519,63519,63519,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,0,0,0,0,2016,0,0,0,0,0,0,0,0,0,0,31,0,0,0,0,0,0,0,0,0,63488,0,63488,0,0,0,63519,0,0,0,0,2016,2016,0,0,0,65514,0,65514,0,0,0,31,0,0,0,64512,0,0,64512,0,63488,63488,0,63488,63488,0,0,63519,63519,63519,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,31,31,31,0,0,0,64512,64512,0,0,63488,63488,63488,63488,63488,0,0,63519,0,0,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,31,0,0,0,0,64512,64512,0,0,0,63488,63488,63488,0,0,0,63519,63519,63519,63519,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,0,31,31,0,64512,0,0,64512,0,0,0,63488,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",1,10);
-          id(rgb8x32)->bitmap_small("[2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,0,2016,0,2016,0,31,31,0,0,0,2016,0,31,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,31,31,31]", "2023.x.y", 1, 10);
-          id(rgb8x32)->clock_screen(10,10);
-          id(rgb8x32)->date_screen(10,5);
+    then:
+      lambda: |-
+        id(rgb8x32)->bitmap_screen("[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,63519,63519,63519,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,0,0,0,0,2016,0,0,0,0,0,0,0,0,0,0,31,0,0,0,0,0,0,0,0,0,63488,0,63488,0,0,0,63519,0,0,0,0,2016,2016,0,0,0,65514,0,65514,0,0,0,31,0,0,0,64512,0,0,64512,0,63488,63488,0,63488,63488,0,0,63519,63519,63519,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,31,31,31,0,0,0,64512,64512,0,0,63488,63488,63488,63488,63488,0,0,63519,0,0,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,31,0,0,0,0,64512,64512,0,0,0,63488,63488,63488,0,0,0,63519,63519,63519,63519,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,0,31,31,0,64512,0,0,64512,0,0,0,63488,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",1,10);
+        id(rgb8x32)->bitmap_small("[2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,0,2016,0,2016,0,31,31,0,0,0,2016,0,31,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,31,31,31]", "2023.x.y", 1, 10);
+        id(rgb8x32)->clock_screen(10,10);
+        id(rgb8x32)->date_screen(10,5);
