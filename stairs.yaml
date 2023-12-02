@@ -64,7 +64,7 @@ light:
   pin: GPIO4
   num_leds: "${num_leds}"
   id: strip
-  name: "${devicename_upper} LED Strip"
+  # name: "${devicename_upper} LED Strip"
   restore_mode: ALWAYS_OFF
   effects:
   - addressable_rainbow:
@@ -90,6 +90,35 @@ light:
   - addressable_fireworks:
   - addressable_flicker:
       name: Flicker
+
+# Steps
+- platform: partition
+  name: ${devicename_upper} steps
+  id: steps
+  segments:
+  - single_light_id: step1
+  - single_light_id: step2
+  - single_light_id: step3
+  effects:
+  - addressable_rainbow:
+      width: 15
+  - addressable_color_wipe:
+      name: Police
+      add_led_interval: 500ms
+      colors:
+      - red: 100%
+        blue: 0%
+        green: 0%
+        white: 0%
+        num_leds: 1
+      - red: 0%
+        blue: 100%
+        green: 0%
+        white: 0%
+        num_leds: 1
+  - addressable_scan:
+      move_interval: 1000ms
+
 # Separate full strip into 15 partitions (steps / stairs)
 - platform: partition
   id: step1
@@ -116,6 +145,7 @@ light:
 #   - id: strip
 #     from: 45
 #     to: 59
+#     reversed: true
 # - platform: partition
 #   id: step5
 #   segments:
@@ -128,6 +158,7 @@ light:
 #   - id: strip
 #     from: 75
 #     to: 89
+#     reversed: true
 # - platform: partition
 #   id: step7
 #   segments:
@@ -140,6 +171,7 @@ light:
 #   - id: strip
 #     from: 105
 #     to: 119
+#     reversed: true
 # - platform: partition
 #   id: step9
 #   segments:
@@ -152,6 +184,7 @@ light:
 #   - id: strip
 #     from: 135
 #     to: 149
+#     reversed: true
 # - platform: partition
 #   id: step11
 #   segments:
@@ -164,6 +197,7 @@ light:
 #   - id: strip
 #     from: 165
 #     to: 179
+#     reversed: true
 # - platform: partition
 #   id: step13
 #   segments:
@@ -176,6 +210,7 @@ light:
 #   - id: strip
 #     from: 195
 #     to: 209
+#     reversed: true
 # - platform: partition
 #   id: step15
 #   segments:
