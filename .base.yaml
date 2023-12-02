@@ -3,7 +3,6 @@ esphome:
   friendly_name: ${devicename_upper}
 
 esp8266:
-  platform: ESP8266
   board: nodemcuv2
 
 packages:

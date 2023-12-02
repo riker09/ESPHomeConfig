@@ -12,56 +12,64 @@ light:
   variant: WS2812
   pin: D3
   num_leds: 179
-  name: "${devicename_upper} LED Strip"
-  id: "${devicename}_strip"
+  name: "${devicename_upper} TV LED Strip"
+  id: strip
   effects:
   - pulse:
+      update_interval: 2s
+      transition_length: 1s
+      min_brightness: 15%
+      max_brightness: 60%
   - addressable_rainbow:
+      width: 179
   - addressable_color_wipe:
-      reverse: true
+      name: Police
+      add_led_interval: 50ms
+      colors:
+      - red: 100%
+        blue: 0%
+        green: 0%
+        white: 0%
+        num_leds: 45
+      - red: 0%
+        blue: 100%
+        green: 0%
+        white: 0%
+        num_leds: 45
   - addressable_scan:
-
-## I2C
-i2c:
-  scl: D1
-  sda: D2
-  scan: false
-
-bme680_bsec:
-  address: 0x77
-  # temperature_offset: 4
-  sample_rate: lp
+      scan_width: 20
+      move_interval: 20ms
+  - addressable_twinkle:
+  - addressable_fireworks:
+  - addressable_flicker:
+      name: Flicker
 
 sensor:
-## BME680
-- platform: bme680_bsec
+## DHT22
+- platform: dht
+  pin: D4
+  model: AM2302
   temperature:
-    name: "${devicename_upper} Temperature"
-    id: bme680_temp
-    accuracy_decimals: 1
-  pressure:
-    name: "${devicename_upper} Pressure"
-    accuracy_decimals: 2
+    name: ${devicename_upper} Temperature
   humidity:
-    name: "${devicename_upper} Humidity"
+    name: ${devicename_upper} Humidity
     accuracy_decimals: 1
-  co2_equivalent:
-    name: "${devicename_upper} CO²"
 
 ## Rotary Encoder
 - platform: rotary_encoder
-  pin_a: D6 # brown
-  pin_b: D7 # red
+  pin_a: D7 # red
+  pin_b: D6 # brown
   id: knob
+  name: ${devicename_upper} Rotary Encoder
   restore_mode: ALWAYS_ZERO
   min_value: 0
-  max_value: 255
-  resolution: 4
+  max_value: 31
   on_value:
     then:
     - light.turn_on:
-        id: ${devicename}_strip
-        brightness: !lambda "return x / 255.0;"
+        id: strip
+        transition_length: 50ms
+        brightness: !lambda "return x / 31;"
 
 ## Rotary Push Button
 binary_sensor:
@@ -75,58 +83,61 @@ binary_sensor:
   - delayed_off: 10ms
   on_click:
     ## Short press
-  - then:
-    - light.turn_on: ${devicename}_strip
+  - min_length: 50ms
+    max_length: 350ms
+    then:
+    - light.toggle: strip
     ## Long press
-  - min_length: 1000ms
-    max_length: 3000ms
+  - min_length: 500ms
+    max_length: 1000ms
     then:
-    - light.turn_off: ${devicename}_strip
-  on_double_click:
-    then:
-    - script.execute: next_effect
+    - light.turn_off: strip
+    ## Double click
+  # on_double_click:
+  #   then:
+  #   - script.execute: next_effect
 
-## Globals
-globals:
-- id: current_effect_int
-  type: int
-  restore_value: no
-  initial_value: '0'
+# ## Globals
+# globals:
+# - id: current_effect_int
+#   type: int
+#   restore_value: no
+#   initial_value: '0'
 
-## Automations
-script:
-- id: next_effect
-  then:
-  - script.execute: advance_effect
-  - script.execute: show_effect
+# ## Automations
+# script:
+# - id: next_effect
+#   then:
+#   - script.execute: advance_effect
+#   - script.execute: show_effect
 
-- id: advance_effect
-  then:
-  - lambda: |-
-      if (id(current_effect_int) < 3) {
-        id(current_effect_int) += 1;
-      } else {
-        id(current_effect_int) = 0;
-      }
+# - id: advance_effect
+#   then:
+#   - lambda: |-
+#       if (id(current_effect_int) < 3) {
+#         id(current_effect_int) += 1;
+#       } else {
+#         id(current_effect_int) = 0;
+#       }
 
-- id: show_effect
-  then:
-  - lambda: |-
-      auto call = id(${devicename}_strip).turn_on();
+# - id: show_effect
+#   then:
+#   - lambda: |-
+#       auto call = id(strip).turn_on();
 
-      switch(id(current_effect_int)) {
-        default:
-          call.set_effect("Rainbow");
-          break;
-        case 1:
-          call.set_effect("Color Wipe");
-          break;
-        case 2:
-          call.set_effect("Scan");
-          break;
-        case 3:
-          call.set_effect("Pulse");
-          break;
-      }
+#       switch(id(current_effect_int)) {
+#         default:
+#           call.set_effect("Rainbow");
+#           break;
+#         case 1:
+#           call.set_effect("Color Wipe");
+#           break;
+#         case 2:
+#           call.set_effect("Scan");
+#           break;
+#         case 3:
+#           call.set_effect("Pulse");
+#           break;
+#       }
 
-      call.perform();
+#       call.perform();
