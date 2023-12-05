@@ -23,6 +23,20 @@ light:
   - addressable_rainbow:
       width: 179
   - addressable_color_wipe:
+      name: Cyberpunk
+      add_led_interval: 200ms
+      colors:
+      - red: 80%
+        blue: 100%
+        green: 0%
+        white: 0%
+        num_leds: 90
+      - red: 0%
+        blue: 100%
+        green: 80%
+        white: 0%
+        num_leds: 90
+  - addressable_color_wipe:
       name: Police
       add_led_interval: 50ms
       colors:
@@ -30,12 +44,12 @@ light:
         blue: 0%
         green: 0%
         white: 0%
-        num_leds: 45
+        num_leds: 90
       - red: 0%
         blue: 100%
         green: 0%
         white: 0%
-        num_leds: 45
+        num_leds: 90
   - addressable_scan:
       scan_width: 20
       move_interval: 20ms
