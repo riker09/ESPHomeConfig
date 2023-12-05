@@ -97,15 +97,18 @@ binary_sensor:
   - delayed_off: 10ms
   on_click:
     ## Short press
-  - min_length: 50ms
+    min_length: 50ms
     max_length: 350ms
     then:
-    - light.toggle: strip
-    ## Long press
-  - min_length: 500ms
-    max_length: 1000ms
-    then:
-    - light.turn_off: strip
+    - if: 
+        condition: 
+          light.is_off: strip
+        then:
+        - sensor.rotary_encoder.set_value:
+            id: knob
+            value: 12
+        else:
+        - light.turn_off: strip
     ## Double click
   # on_double_click:
   #   then:
