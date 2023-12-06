@@ -58,6 +58,42 @@ light:
   - addressable_flicker:
       name: Flicker
 
+- platform: partition
+  name: "${devicename_upper} TV LED strip bottom"
+  segments:
+  - id: strip
+    from: 150
+    to: 178
+  - id: strip
+    from: 0
+    to: 28
+  effects:
+  - addressable_scan:
+      scan_width: 8
+      move_interval: 33ms
+- platform: partition
+  name: "${devicename_upper} TV LED strip left"
+  segments:
+  - id: strip
+    from: 29
+    to: 59
+- platform: partition
+  name: "${devicename_upper} TV LED strip top"
+  segments:
+  - id: strip
+    from: 60
+    to: 118
+  effects:
+  - addressable_scan:
+      scan_width: 8
+      move_interval: 33ms
+- platform: partition
+  name: "${devicename_upper} TV LED strip right"
+  segments:
+  - id: strip
+    from: 119
+    to: 149
+
 sensor:
 ## DHT22
 - platform: dht
