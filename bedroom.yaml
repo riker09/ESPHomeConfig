@@ -2,18 +2,18 @@ substitutions:
   devicename: bedroom
   devicename_upper: Bedroom
 
-<<: !include ./.base.yaml
+<<: !include ./.base32.yaml
 
 
 ## LED
 light:
 - platform: neopixelbus
-  type: GRB
-  variant: WS2812
-  pin: D3
+  variant: WS2812X
+  pin: GPIO33
   num_leds: 179
-  name: "${devicename_upper} TV LED Strip"
+  name: "Full Strip"
   id: strip
+  # Limit max brightness
   effects:
   - pulse:
       update_interval: 2s
@@ -59,7 +59,7 @@ light:
       name: Flicker
 
 - platform: partition
-  name: "${devicename_upper} TV LED strip bottom"
+  name: "Bottom"
   segments:
   - id: strip
     from: 150
@@ -72,13 +72,13 @@ light:
       scan_width: 8
       move_interval: 33ms
 - platform: partition
-  name: "${devicename_upper} TV LED strip left"
+  name: "Left"
   segments:
   - id: strip
     from: 29
     to: 59
 - platform: partition
-  name: "${devicename_upper} TV LED strip top"
+  name: "Top"
   segments:
   - id: strip
     from: 60
@@ -88,29 +88,53 @@ light:
       scan_width: 8
       move_interval: 33ms
 - platform: partition
-  name: "${devicename_upper} TV LED strip right"
+  name: "Right"
   segments:
   - id: strip
     from: 119
     to: 149
 
+i2c:
+
+bme680_bsec:
+  address: 0x77
+
 sensor:
-## DHT22
-- platform: dht
-  pin: D4
-  model: AM2302
+# BME680
+- platform: bme680_bsec
   temperature:
-    name: ${devicename_upper} Temperature
+    name: BME680 Temperature
+    filters:
+      - median
   humidity:
-    name: ${devicename_upper} Humidity
+    name: BME680 Humidity
+    filters:
+      - median
+  pressure:
+    name: BME680 Pressure
+    filters:
+      - median
+  iaq:
+    id: iaq
+    filters:
+      - median
+
+# DHT22
+- platform: dht
+  pin: GPIO32
+  model: DHT22_TYPE2
+  temperature:
+    name: DHT22 Temperature
+  humidity:
+    name: DHT22 Humidity
     accuracy_decimals: 1
 
-## Rotary Encoder
+# Rotary Encoder
 - platform: rotary_encoder
-  pin_a: D7 # red
-  pin_b: D6 # brown
+  pin_a: GPIO27 # brown
+  pin_b: GPIO26
   id: knob
-  name: ${devicename_upper} Rotary Encoder
+  name: Rotary Encoder
   restore_mode: ALWAYS_ZERO
   min_value: 0
   max_value: 31
@@ -121,43 +145,78 @@ sensor:
         transition_length: 50ms
         brightness: !lambda "return x / 31;"
 
-## Rotary Push Button
+# Rotary Push Button
 binary_sensor:
 - platform: gpio
   pin:
-    number: D5
+    number: GPIO25
     inverted: true
   id: button
   filters:
   - delayed_on: 10ms
   - delayed_off: 10ms
   on_click:
-    ## Short press
+    # Short press
     min_length: 50ms
     max_length: 350ms
     then:
-    - if: 
-        condition: 
+    - if:
+        condition:
           light.is_off: strip
         then:
         - sensor.rotary_encoder.set_value:
             id: knob
-            value: 12
+            value: 15
         else:
         - light.turn_off: strip
-    ## Double click
+    # Double click
   # on_double_click:
   #   then:
   #   - script.execute: next_effect
 
-# ## Globals
+
+text_sensor:
+- platform: bme680_bsec
+  iaq_accuracy:
+    name: "BME680 IAQ Accuracy"
+
+- platform: template
+  name: "BME680 IAQ Classification"
+  icon: "mdi:checkbox-marked-circle-outline"
+  lambda: |-
+    if ( int(id(iaq).state) <= 50) {
+      return {"Excellent"};
+    }
+    else if (int(id(iaq).state) >= 51 && int(id(iaq).state) <= 100) {
+      return {"Good"};
+    }
+    else if (int(id(iaq).state) >= 101 && int(id(iaq).state) <= 150) {
+      return {"Lightly polluted"};
+    }
+    else if (int(id(iaq).state) >= 151 && int(id(iaq).state) <= 200) {
+      return {"Moderately polluted"};
+    }
+    else if (int(id(iaq).state) >= 201 && int(id(iaq).state) <= 250) {
+      return {"Heavily polluted"};
+    }
+    else if (int(id(iaq).state) >= 251 && int(id(iaq).state) <= 350) {
+      return {"Severely polluted"};
+    }
+    else if (int(id(iaq).state) >= 351) {
+      return {"Extremely polluted"};
+    }
+    else {
+      return {"error"};
+    }
+
+# # Globals
 # globals:
 # - id: current_effect_int
 #   type: int
 #   restore_value: no
 #   initial_value: '0'
 
-# ## Automations
+# # Automations
 # script:
 # - id: next_effect
 #   then:
