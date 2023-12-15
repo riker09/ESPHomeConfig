@@ -9,7 +9,7 @@ substitutions:
 light:
 - platform: neopixelbus
   variant: WS2812X
-  pin: GPIO33
+  pin: GPIO13
   num_leds: 179
   name: "Full Strip"
   id: strip
@@ -93,6 +93,30 @@ light:
   - id: strip
     from: 119
     to: 149
+- platform: partition
+  name: "Full Left"
+  segments:
+  - id: strip
+    from: 0
+    to: 28
+  - id: strip
+    from: 29
+    to: 59
+  - id: strip
+    from: 60
+    to: 89
+- platform: partition
+  name: "Full Right"
+  segments:
+  - id: strip
+    from: 90
+    to: 118
+  - id: strip
+    from: 119
+    to: 149
+  - id: strip
+    from: 150
+    to: 118
 
 i2c:
 
@@ -115,6 +139,7 @@ sensor:
     filters:
       - median
   iaq:
+    name: BME680 IAQ Index
     id: iaq
     filters:
       - median
