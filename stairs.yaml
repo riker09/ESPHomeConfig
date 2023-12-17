@@ -19,18 +19,66 @@ binary_sensor:
   ## PIR
 - platform: gpio
   pin: GPIO18
-  name: "${devicename_upper} Motion"
+  name: "${devicename_upper} Motion Ground Floor"
+  id: pir_ground_floor
+  device_class: motion
+  on_press:
+    if:
+      condition:
+        and:
+        - light.is_off: strip
+        - light.is_off: steps
+        - light.is_off: step1
+        - light.is_off: step2
+        - light.is_off: step3
+        # - light.is_off: step4
+        # - light.is_off: step5
+        # - light.is_off: step6
+        # - light.is_off: step7
+        # - light.is_off: step8
+        # - light.is_off: step9
+        # - light.is_off: step10
+        # - light.is_off: step11
+        # - light.is_off: step12
+        # - light.is_off: step13
+        # - light.is_off: step14
+        # - light.is_off: step15
+      then:
+      - script.execute: 
+          id: bottom_to_top
+          ## Motion events activate light for 10s
+          delay_ms: 15000
+- platform: gpio
+  pin: GPIO19
+  name: "${devicename_upper} Motion First Floor"
+  id: pir_first_floor
   device_class: motion
   on_press:
     if:
       condition: 
-        not:
-        - light.is_on: strip
+        and:
+        - light.is_off: strip
+        - light.is_off: steps
+        - light.is_off: step1
+        - light.is_off: step2
+        - light.is_off: step3
+        # - light.is_off: step4
+        # - light.is_off: step5
+        # - light.is_off: step6
+        # - light.is_off: step7
+        # - light.is_off: step8
+        # - light.is_off: step9
+        # - light.is_off: step10
+        # - light.is_off: step11
+        # - light.is_off: step12
+        # - light.is_off: step13
+        # - light.is_off: step14
+        # - light.is_off: step15
       then:
       - script.execute: 
-          id: stairs_leds
+          id: top_to_bottom
           ## Motion events activate light for 10s
-          delay_ms: 10000
+          delay_ms: 15000
 
   ## Button
 - platform: gpio
@@ -42,9 +90,9 @@ binary_sensor:
   on_press:
     if:
       condition:
-      - script.is_running: stairs_leds
+      - script.is_running: top_to_bottom
       then:
-      - script.stop: stairs_leds
+      - script.stop: top_to_bottom
       - light.turn_off:
           id: strip
       else:
@@ -52,7 +100,7 @@ binary_sensor:
           id: strip
           transition_length: 0s
       - script.execute: 
-          id: stairs_leds
+          id: top_to_bottom
           ## Button presses activate light for 30s
           delay_ms: 30000
 
@@ -64,7 +112,7 @@ light:
   pin: GPIO4
   num_leds: "${num_leds}"
   id: strip
-  # name: "${devicename_upper} LED Strip"
+  name: "Full Strip"
   restore_mode: ALWAYS_OFF
   effects:
   - addressable_rainbow:
@@ -93,15 +141,28 @@ light:
 
 # Steps
 - platform: partition
-  name: ${devicename_upper} steps
+  name: Steps
   id: steps
   segments:
   - single_light_id: step1
   - single_light_id: step2
   - single_light_id: step3
+  # - single_light_id: step4
+  # - single_light_id: step5
+  # - single_light_id: step6
+  # - single_light_id: step7
+  # - single_light_id: step8
+  # - single_light_id: step9
+  # - single_light_id: step10
+  # - single_light_id: step11
+  # - single_light_id: step12
+  # - single_light_id: step13
+  # - single_light_id: step14
+  # - single_light_id: step15
   effects:
   - addressable_rainbow:
-      width: 15
+      width: 3
+      # width: 15
   - addressable_color_wipe:
       name: Police
       add_led_interval: 500ms
@@ -117,7 +178,7 @@ light:
         white: 0%
         num_leds: 1
   - addressable_scan:
-      move_interval: 1000ms
+      move_interval: 300ms
 
 # Separate full strip into 15 partitions (steps / stairs)
 - platform: partition
@@ -219,7 +280,7 @@ light:
 #     to: 224
 
 script:
-- id: stairs_leds
+- id: top_to_bottom
   mode: restart
   parameters:
     delay_ms: int
@@ -246,36 +307,47 @@ script:
   # - light.turn_on:
   #     <<: *color
   #     id: step4
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step5
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step6
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step7
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step8
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step9
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step10
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step11
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step12
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step13
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step14
+  # - delay: ${step_delay}
   # - light.turn_on:
   #     <<: *color
   #     id: step15
@@ -313,3 +385,119 @@ script:
   # - light.turn_off: step14
   # - delay: ${step_delay}
   # - light.turn_off: step15
+
+- id: bottom_to_top
+  mode: restart
+  parameters:
+    delay_ms: int
+  then:
+    ## Turn on the lights in proper order
+  - light.turn_on: 
+      <<: *color
+      id: step3
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step2
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step1
+
+  # - light.turn_on: 
+  #     <<: *color
+  #     id: step15
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step14
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step13
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step12
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step11
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step10
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step9
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step8
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step7
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step6
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step5
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step4
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step3
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step2
+  # - delay: ${step_delay}
+  # - light.turn_on:
+  #     <<: *color
+  #     id: step1
+
+    ## Wait a few seconds
+  - delay: !lambda return delay_ms;
+
+    ## Start turning things off again
+  - light.turn_off: step3
+  - delay: ${step_delay}
+  - light.turn_off: step2
+  - delay: ${step_delay}
+  - light.turn_off: step1
+  # - light.turn_off: step15
+  # - delay: ${step_delay}
+  # - light.turn_off: step14
+  # - delay: ${step_delay}
+  # - light.turn_off: step13
+  # - delay: ${step_delay}
+  # - light.turn_off: step12
+  # - delay: ${step_delay}
+  # - light.turn_off: step11
+  # - delay: ${step_delay}
+  # - light.turn_off: step10
+  # - delay: ${step_delay}
+  # - light.turn_off: step9
+  # - delay: ${step_delay}
+  # - light.turn_off: step8
+  # - delay: ${step_delay}
+  # - light.turn_off: step7
+  # - delay: ${step_delay}
+  # - light.turn_off: step6
+  # - delay: ${step_delay}
+  # - light.turn_off: step5
+  # - delay: ${step_delay}
+  # - light.turn_off: step4
+  # - delay: ${step_delay}
+  # - light.turn_off: step3
+  # - delay: ${step_delay}
+  # - light.turn_off: step2
+  # - delay: ${step_delay}
+  # - light.turn_off: step1
