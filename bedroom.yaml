@@ -4,6 +4,22 @@ substitutions:
 
 <<: !include ./.base32.yaml
 
+## Animation speed
+number:
+- platform: template
+  id: animation_speed
+  name: Animation Speed
+  optimistic: true
+  step: 16
+  min_value: 16
+  max_value: 320
+- platform: template
+  id: animation_size
+  name: Animation Size
+  optimistic: true
+  step: 1
+  min_value: 1
+  max_value: 12
 
 ## LED
 light:
@@ -71,12 +87,115 @@ light:
   - addressable_scan:
       scan_width: 8
       move_interval: 33ms
+  - addressable_lambda: &warpcore
+      name: Warp Core
+      lambda: |-
+        // Static variables keep their value even when
+        // stopping and starting the effect again
+        static uint32_t ms = 0;
+        static uint16_t pos = 0;
+
+        uint16_t cycle = id(animation_speed).state;
+
+        // EXIT PREMATURELY WHEN IT'S NOT TIME TO RUN
+        // EITHER USE number.animation_speed OR SET A VALUE IN MS, EG. 16
+        if (millis() - ms < cycle) {
+          return;
+        }
+
+        // PULSE SIZE
+        // EITHER USE number.animation_size OR SET A VALUE IN PIXEL, EG. 5
+        byte size = id(animation_size).state;
+
+        // PADDING
+        byte pad = floor((size - 1) / 2);
+        byte offset = size % 2 == 0 ? 1 : 0;
+
+        // DETERMINE MIDDLE
+        uint16_t middle = ceil(it.size() / 2);
+
+        // To reset static when stopping and starting the effect
+        // again you can use the initial_run variables
+        if (initial_run) {
+          ms = 0;
+          pos = 0 - pad;
+        }
+
+        it.all() = Color::BLACK;
+
+        // START & END
+        uint16_t start = pos;
+        uint16_t end = it.size() - 1 - pos;
+
+        if (pos <= middle + pad) {
+          // PAD BEFORE
+          for (int i = 1; i <= pad; i++) {
+            // FROM END
+            if (end + i < it.size() && end + i >= middle) {
+              it[end + i] = Color(0, 0, 255); // current_color;
+            }
+            // FROM START
+            if (start + i > 0 && start + i < middle) {
+              it[start + i] = Color(0, 0, 255); // current_color; // Color(0, 0, 255); // BLUE
+            }
+          }
+
+          // CENTER PIXEL
+          if (start >= 0 && start < middle) {
+            it[start] = current_color;
+
+            // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
+            if (offset > 0 && start - offset >= 0 && start - offset < middle) {
+              it[start - offset] = Color(255, 0, 255); // current_color;
+            }
+          }
+          if (end < it.size() && end >= middle) {
+            it[end] = current_color;
+
+            // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
+            if (offset > 0 && end - offset < it.size() && end - offset >= middle) {
+              it[end - offset] = Color(255, 0, 255); // current_color;
+            }
+          }
+
+          // PAD AFTER
+          for (int i = 1; i <= pad; i++) {
+            // FROM START
+            if (start - i - offset > 0 && start - i - offset < middle) {
+              it[start - i - offset] = Color(255, 0, 0); // current_color; // Color(255, 0, 0); // RED
+            }
+            // FROM END
+            if (end - i - offset >= middle && end - i - offset < it.size()) {
+              it[end - i - offset] = Color(255, 0, 0); // current_color;
+            }
+
+          }
+        }
+
+        // INCREASE POS
+        pos++;
+
+        if (pos > it.size()) {
+          pos = 0;
+        }
+
+        // WAIT FOR 500 MS (MAX) AFTER ANIMATION HAS REACHED THE MIDDLE (REACTION CHAMBER)
+        // ALLOW ANIMATION TO END SAFELY
+        if (pos > (middle + pad + 1 + offset) && (pos - middle) * cycle > 500) {
+          pos = 0;
+        }
+
+        // UPDATE MS FOR THE NEXT RUN
+        ms = millis();
+
 - platform: partition
   name: "Left"
   segments:
   - id: strip
     from: 29
     to: 59
+  effects:
+    addressable_lambda: *warpcore
 - platform: partition
   name: "Top"
   segments:
@@ -93,6 +212,8 @@ light:
   - id: strip
     from: 119
     to: 149
+  effects:
+    addressable_lambda: *warpcore
 - platform: partition
   name: "Full Left"
   segments:
@@ -116,7 +237,7 @@ light:
     to: 149
   - id: strip
     from: 150
-    to: 118
+    to: 178
 
 i2c:
 
