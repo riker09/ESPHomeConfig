@@ -15,6 +15,16 @@ substitutions:
 wifi:
   fast_connect: true
 
+## Animation speed
+number:
+- platform: template
+  id: animation_speed
+  name: Animation Speed
+  optimistic: true
+  step: 32
+  min_value: 32
+  max_value: 640
+
 binary_sensor:
   ## PIR
 - platform: gpio
@@ -24,8 +34,9 @@ binary_sensor:
   device_class: motion
   on_press:
     if:
+      # When the lights are out
       condition:
-        and:
+        and: &lightsareout
         - light.is_off: strip
         - light.is_off: steps
         - light.is_off: step1
@@ -44,10 +55,28 @@ binary_sensor:
         # - light.is_off: step14
         # - light.is_off: step15
       then:
-      - script.execute: 
-          id: bottom_to_top
-          ## Motion events activate light for 10s
+      - script.execute: bottom_to_top_on
+      - script.execute:
+          id: bottom_to_top_off
           delay_ms: 15000
+      else: &extend
+      # When bottom_to_top_off is running, trigger again
+      - if:
+          condition:
+            - script.is_running: bottom_to_top_off
+          then:
+            - script.execute:
+                id: bottom_to_top_off
+                delay_ms: 5000
+      # When top_to_bottom_off is running, trigger again
+      - if:
+          condition:
+            - script.is_running: top_to_bottom_off
+          then:
+            - script.execute:
+                id: top_to_bottom_off
+                delay_ms: 5000
+
 - platform: gpio
   pin: GPIO19
   name: "${devicename_upper} Motion First Floor"
@@ -55,30 +84,15 @@ binary_sensor:
   device_class: motion
   on_press:
     if:
-      condition: 
-        and:
-        - light.is_off: strip
-        - light.is_off: steps
-        - light.is_off: step1
-        - light.is_off: step2
-        - light.is_off: step3
-        # - light.is_off: step4
-        # - light.is_off: step5
-        # - light.is_off: step6
-        # - light.is_off: step7
-        # - light.is_off: step8
-        # - light.is_off: step9
-        # - light.is_off: step10
-        # - light.is_off: step11
-        # - light.is_off: step12
-        # - light.is_off: step13
-        # - light.is_off: step14
-        # - light.is_off: step15
+      # When the lights are out
+      condition:
+        and: *lightsareout
       then:
-      - script.execute: 
-          id: top_to_bottom
-          ## Motion events activate light for 10s
+      - script.execute: top_to_bottom_on
+      - script.execute:
+          id: top_to_bottom_off
           delay_ms: 15000
+      else: *extend
 
   ## Button
 - platform: gpio
@@ -90,19 +104,36 @@ binary_sensor:
   on_press:
     if:
       condition:
-      - script.is_running: top_to_bottom
+        and: *lightsareout
       then:
-      - script.stop: top_to_bottom
-      - light.turn_off:
+        light.turn_on:
           id: strip
+          transition_length: 0.3s
+          color_mode: RGB_WHITE
+          brightness: 0.4
+          white: 1.0
+          color_brightness: 0 ## Required to keep the RGB leds off
+          red: 0
+          blue: 0
+          green: 0
       else:
-      - light.turn_off:
-          id: strip
-          transition_length: 0s
-      - script.execute: 
-          id: top_to_bottom
-          ## Button presses activate light for 30s
-          delay_ms: 30000
+      - light.turn_off: strip
+      - light.turn_off: steps
+      - light.turn_off: step1
+      - light.turn_off: step2
+      - light.turn_off: step3
+      - light.turn_off: step4
+      - light.turn_off: step5
+      - light.turn_off: step6
+      - light.turn_off: step7
+      # - light.turn_off: step8
+      # - light.turn_off: step9
+      # - light.turn_off: step10
+      # - light.turn_off: step11
+      # - light.turn_off: step12
+      # - light.turn_off: step13
+      # - light.turn_off: step14
+      # - light.turn_off: step15
 
 ## LED Strip
 light:
@@ -116,21 +147,7 @@ light:
   restore_mode: ALWAYS_OFF
   effects:
   - addressable_rainbow:
-      width: 45
-  - addressable_color_wipe:
-      name: Police
-      add_led_interval: 50ms
-      colors:
-      - red: 100%
-        blue: 0%
-        green: 0%
-        white: 0%
-        num_leds: 15
-      - red: 0%
-        blue: 100%
-        green: 0%
-        white: 0%
-        num_leds: 15
+      width: 115
   - addressable_scan:
       scan_width: 3
       move_interval: 20ms
@@ -280,10 +297,7 @@ light:
 #     to: 224
 
 script:
-- id: top_to_bottom
-  mode: restart
-  parameters:
-    delay_ms: int
+- id: top_to_bottom_on
   then:
     ## Turn on the lights in proper order
   - light.turn_on: &color
@@ -354,9 +368,15 @@ script:
   #     id: step15
 
     ## Wait a few seconds
-  - delay: !lambda return delay_ms;
+  # - delay: !lambda return delay_ms;
 
-    ## Start turning things off again
+- id: top_to_bottom_off
+  mode: restart
+  parameters:
+    delay_ms: int
+  then:
+    ## Turn off the lights in proper order after initial delay
+  - delay: !lambda return delay_ms;
   - light.turn_off: step1
   - delay: ${step_delay}
   - light.turn_off: step2
@@ -387,10 +407,7 @@ script:
   # - delay: ${step_delay}
   # - light.turn_off: step15
 
-- id: bottom_to_top
-  mode: restart
-  parameters:
-    delay_ms: int
+- id: bottom_to_top_on
   then:
     ## Turn on the lights in proper order
   # - light.turn_on:
@@ -451,6 +468,14 @@ script:
   - light.turn_on:
       <<: *color
       id: step1
+
+- id: bottom_to_top_off
+  mode: restart
+  parameters:
+    delay_ms: int
+  then:
+    ## Turn off the lights in proper order after initial delay
+  - delay: !lambda return delay_ms;
   # - light.turn_off: step15
   # - delay: ${step_delay}
   # - light.turn_off: step14
