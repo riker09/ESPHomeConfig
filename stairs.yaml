@@ -8,12 +8,34 @@ substitutions:
   # num_leds: "225"
 
   ## Time between toggling on/off the stairs
-  step_delay: 0.5s
+  step_delay: "300ms"
 
 <<: !include .base32.yaml
 
 wifi:
   fast_connect: true
+
+esphome:
+  name: ${devicename}
+  friendly_name: ${devicename_upper}
+  # Sets the lights to 50% on boot
+  on_boot:
+    priority: 700
+    then:
+    - light.turn_on:
+        id: strip
+        transition_length: 0s
+        brightness: 50%
+    - light.turn_off:
+        id: strip
+        transition_length: 0s
+    - light.turn_on:
+        id: steps
+        transition_length: 0s
+        brightness: 50%
+    - light.turn_off:
+        id: steps
+        transition_length: 0s
 
 ## Animation speed
 number:
@@ -26,6 +48,10 @@ number:
   max_value: 640
 
 binary_sensor:
+- platform: template
+  id: timer
+- platform: template
+  id: reverse
   ## PIR
 - platform: gpio
   pin: GPIO18
@@ -36,16 +62,16 @@ binary_sensor:
     if:
       # When the lights are out
       condition:
-        and: &lightsareout
+        and: &whenthelightsareout
         - light.is_off: strip
         - light.is_off: steps
         - light.is_off: step1
         - light.is_off: step2
         - light.is_off: step3
-        # - light.is_off: step4
-        # - light.is_off: step5
-        # - light.is_off: step6
-        # - light.is_off: step7
+        - light.is_off: step4
+        - light.is_off: step5
+        - light.is_off: step6
+        - light.is_off: step7
         # - light.is_off: step8
         # - light.is_off: step9
         # - light.is_off: step10
@@ -55,44 +81,43 @@ binary_sensor:
         # - light.is_off: step14
         # - light.is_off: step15
       then:
+      - lambda: |-
+          id(timer).publish_state(true);
       - script.execute: bottom_to_top_on
       - script.execute:
-          id: bottom_to_top_off
+          id: timeout
           delay_ms: 15000
-      else: &extend
-      # When bottom_to_top_off is running, trigger again
-      - if:
-          condition:
-            - script.is_running: bottom_to_top_off
-          then:
-            - script.execute:
-                id: bottom_to_top_off
-                delay_ms: 5000
-      # When top_to_bottom_off is running, trigger again
-      - if:
-          condition:
-            - script.is_running: top_to_bottom_off
-          then:
-            - script.execute:
-                id: top_to_bottom_off
-                delay_ms: 5000
+      else:
+      - script.stop: timeout
+  on_release: &timeout
+    then:
+    - if:
+        condition:
+        - binary_sensor.is_on: timer
+        then:
+        - script.execute:
+            id: timeout
+            delay_ms: 15000
 
 - platform: gpio
   pin: GPIO19
   name: "${devicename_upper} Motion First Floor"
-  id: pir_first_floor
   device_class: motion
   on_press:
     if:
       # When the lights are out
       condition:
-        and: *lightsareout
+        and: *whenthelightsareout
       then:
+      - lambda: |-
+          id(timer).publish_state(true);
       - script.execute: top_to_bottom_on
       - script.execute:
-          id: top_to_bottom_off
+          id: timeout
           delay_ms: 15000
-      else: *extend
+      else:
+      - script.stop: timeout
+  on_release: *timeout
 
   ## Button
 - platform: gpio
@@ -104,7 +129,7 @@ binary_sensor:
   on_press:
     if:
       condition:
-        and: *lightsareout
+        and: *whenthelightsareout
       then:
         light.turn_on:
           id: strip
@@ -395,6 +420,26 @@ light:
 #     to: 224
 
 script:
+- id: timeout
+  mode: restart
+  parameters:
+    delay_ms: int
+  then:
+  - if:
+      condition:
+      - binary_sensor.is_on: timer
+      then:
+      - delay: !lambda return delay_ms;
+      - if:
+          condition:
+          - binary_sensor.is_on: reverse
+          then:
+          - script.execute: bottom_to_top_off
+          else:
+          - script.execute: top_to_bottom_off
+      - lambda: |-
+          id(timer).publish_state(false);
+
 - id: top_to_bottom_on
   then:
     ## Turn on the lights in proper order
@@ -465,16 +510,9 @@ script:
   #     <<: *color
   #     id: step15
 
-    ## Wait a few seconds
-  # - delay: !lambda return delay_ms;
-
 - id: top_to_bottom_off
-  mode: restart
-  parameters:
-    delay_ms: int
   then:
-    ## Turn off the lights in proper order after initial delay
-  - delay: !lambda return delay_ms;
+  ## Turn off the lights in proper order
   - light.turn_off: step1
   - delay: ${step_delay}
   - light.turn_off: step2
@@ -568,12 +606,8 @@ script:
       id: step1
 
 - id: bottom_to_top_off
-  mode: restart
-  parameters:
-    delay_ms: int
   then:
-    ## Turn off the lights in proper order after initial delay
-  - delay: !lambda return delay_ms;
+  ## Turn off the lights in proper order
   # - light.turn_off: step15
   # - delay: ${step_delay}
   # - light.turn_off: step14
