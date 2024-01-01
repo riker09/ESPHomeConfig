@@ -81,6 +81,19 @@ binary_sensor:
         - light.is_off: step15
       then:
       - script.execute: bottom_to_top_on
+      else:
+      # When any light is on
+      - if:
+          # Check if an OFF script is running
+          condition:
+            or:
+            - script.is_running: top_to_bottom_off
+            - script.is_running: bottom_to_top_off
+          # Kill off animation script and turn on all steps
+          then:
+          - script.stop: top_to_bottom_off
+          - script.stop: bottom_to_top_off
+          - script.execute: turn_on_all_steps
   on_release: &timeout
     then:
     - if:
@@ -156,11 +169,6 @@ light:
   name: "Full Strip"
   restore_mode: ALWAYS_OFF
   effects:
-  - addressable_rainbow:
-      width: 115
-  - addressable_scan:
-      scan_width: 3
-      move_interval: 20ms
   - addressable_twinkle:
   - addressable_fireworks:
   - addressable_flicker:
@@ -205,7 +213,7 @@ light:
         white: 0%
         num_leds: 1
   - addressable_scan:
-      move_interval: 300ms
+      move_interval: 64ms
   - addressable_lambda: &warpcore
       name: Warp Core
       lambda: |-
@@ -239,7 +247,7 @@ light:
           pos = 0 - pad;
         }
 
-        it.all() = current_color.darken(64);
+        it.all() = current_color.darken(128);
 
         // START & END
         int16_t start = pos;
@@ -429,12 +437,13 @@ script:
   then:
   - lambda: |-
       id(timer).publish_state(true);
+      id(reverse).publish_state(false);
     ## Turn on the lights in proper order
   - light.turn_on: &color
       id: step1
       transition_length: 0.3s
       color_mode: RGB_WHITE
-      brightness: 0.4
+      brightness: 0.33
       white: 1.0
       color_brightness: 0 ## Required to keep the RGB leds off
       red: 0
@@ -627,3 +636,52 @@ script:
   - light.turn_off: step2
   - delay: ${step_delay}
   - light.turn_off: step1
+
+# Turn on all steps simultaneously
+- id: turn_on_all_steps
+  then:
+  - light.turn_on:
+      <<: *color
+      id: step1
+  - light.turn_on:
+      <<: *color
+      id: step2
+  - light.turn_on:
+      <<: *color
+      id: step3
+  - light.turn_on:
+      <<: *color
+      id: step4
+  - light.turn_on:
+      <<: *color
+      id: step5
+  - light.turn_on:
+      <<: *color
+      id: step6
+  - light.turn_on:
+      <<: *color
+      id: step7
+  - light.turn_on:
+      <<: *color
+      id: step8
+  - light.turn_on:
+      <<: *color
+      id: step9
+  - light.turn_on:
+      <<: *color
+      id: step10
+  - light.turn_on:
+      <<: *color
+      id: step11
+  - light.turn_on:
+      <<: *color
+      id: step12
+  - light.turn_on:
+      <<: *color
+      id: step13
+  - light.turn_on:
+      <<: *color
+      id: step14
+  - light.turn_on:
+      <<: *color
+      id: step15
