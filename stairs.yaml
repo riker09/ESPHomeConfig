@@ -2,10 +2,8 @@ substitutions:
   devicename: stairs
   devicename_upper: Stairs
 
-  ## Number of LEDs in strip (15 per stair)
-  num_leds: "150"
-  ## 15 LEDs x 15 stairs = 225 LEDs in strip
-  # num_leds: "225"
+  ## 15 LEDs per stair x 15 stairs = 225 LEDs in strip
+  num_leds: "225"
 
   ## Time between toggling on/off the stairs
   step_delay: "300ms"
@@ -76,11 +74,11 @@ binary_sensor:
         - light.is_off: step8
         - light.is_off: step9
         - light.is_off: step10
-        # - light.is_off: step11
-        # - light.is_off: step12
-        # - light.is_off: step13
-        # - light.is_off: step14
-        # - light.is_off: step15
+        - light.is_off: step11
+        - light.is_off: step12
+        - light.is_off: step13
+        - light.is_off: step14
+        - light.is_off: step15
       then:
       - script.execute: bottom_to_top_on
   on_release: &timeout
@@ -141,11 +139,11 @@ binary_sensor:
       - light.turn_off: step8
       - light.turn_off: step9
       - light.turn_off: step10
-      # - light.turn_off: step11
-      # - light.turn_off: step12
-      # - light.turn_off: step13
-      # - light.turn_off: step14
-      # - light.turn_off: step15
+      - light.turn_off: step11
+      - light.turn_off: step12
+      - light.turn_off: step13
+      - light.turn_off: step14
+      - light.turn_off: step15
 
 ## LED Strip
 light:
@@ -183,11 +181,11 @@ light:
   - single_light_id: step8
   - single_light_id: step9
   - single_light_id: step10
-  # - single_light_id: step11
-  # - single_light_id: step12
-  # - single_light_id: step13
-  # - single_light_id: step14
-  # - single_light_id: step15
+  - single_light_id: step11
+  - single_light_id: step12
+  - single_light_id: step13
+  - single_light_id: step14
+  - single_light_id: step15
   effects:
   - addressable_rainbow:
       width: 7
@@ -373,38 +371,38 @@ light:
     from: 135
     to: 149
     reversed: true
-# - platform: partition
-#   id: step11
-#   segments:
-#   - id: strip
-#     from: 150
-#     to: 164
-# - platform: partition
-#   id: step12
-#   segments:
-#   - id: strip
-#     from: 165
-#     to: 179
-#     reversed: true
-# - platform: partition
-#   id: step13
-#   segments:
-#   - id: strip
-#     from: 190
-#     to: 194
-# - platform: partition
-#   id: step14
-#   segments:
-#   - id: strip
-#     from: 195
-#     to: 209
-#     reversed: true
-# - platform: partition
-#   id: step15
-#   segments:
-#   - id: strip
-#     from: 210
-#     to: 224
+- platform: partition
+  id: step11
+  segments:
+  - id: strip
+    from: 150
+    to: 164
+- platform: partition
+  id: step12
+  segments:
+  - id: strip
+    from: 165
+    to: 179
+    reversed: true
+- platform: partition
+  id: step13
+  segments:
+  - id: strip
+    from: 180
+    to: 194
+- platform: partition
+  id: step14
+  segments:
+  - id: strip
+    from: 195
+    to: 209
+    reversed: true
+- platform: partition
+  id: step15
+  segments:
+  - id: strip
+    from: 210
+    to: 224
 
 script:
 - id: timeout
@@ -478,26 +476,26 @@ script:
   - light.turn_on:
       <<: *color
       id: step10
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step11
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step12
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step13
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step14
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step15
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step11
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step12
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step13
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step14
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step15
 
 - id: top_to_bottom_off
   then:
@@ -521,16 +519,16 @@ script:
   - light.turn_off: step9
   - delay: ${step_delay}
   - light.turn_off: step10
-  # - delay: ${step_delay}
-  # - light.turn_off: step11
-  # - delay: ${step_delay}
-  # - light.turn_off: step12
-  # - delay: ${step_delay}
-  # - light.turn_off: step13
-  # - delay: ${step_delay}
-  # - light.turn_off: step14
-  # - delay: ${step_delay}
-  # - light.turn_off: step15
+  - delay: ${step_delay}
+  - light.turn_off: step11
+  - delay: ${step_delay}
+  - light.turn_off: step12
+  - delay: ${step_delay}
+  - light.turn_off: step13
+  - delay: ${step_delay}
+  - light.turn_off: step14
+  - delay: ${step_delay}
+  - light.turn_off: step15
 
 - id: bottom_to_top_on
   then:
@@ -538,25 +536,25 @@ script:
       id(timer).publish_state(true);
       id(reverse).publish_state(true);
     ## Turn on the lights in proper order
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step15
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step14
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step13
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step12
-  # - delay: ${step_delay}
-  # - light.turn_on:
-  #     <<: *color
-  #     id: step11
-  # - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step15
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step14
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step13
+  - light.turn_on:
+      <<: *color
+      id: step12
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step11
+  - delay: ${step_delay}
   - light.turn_on:
       <<: *color
       id: step10
@@ -600,16 +598,16 @@ script:
 - id: bottom_to_top_off
   then:
   ## Turn off the lights in proper order
-  # - light.turn_off: step15
-  # - delay: ${step_delay}
-  # - light.turn_off: step14
-  # - delay: ${step_delay}
-  # - light.turn_off: step13
-  # - delay: ${step_delay}
-  # - light.turn_off: step12
-  # - delay: ${step_delay}
-  # - light.turn_off: step11
-  # - delay: ${step_delay}
+  - light.turn_off: step15
+  - delay: ${step_delay}
+  - light.turn_off: step14
+  - delay: ${step_delay}
+  - light.turn_off: step13
+  - delay: ${step_delay}
+  - light.turn_off: step12
+  - delay: ${step_delay}
+  - light.turn_off: step11
+  - delay: ${step_delay}
   - light.turn_off: step10
   - delay: ${step_delay}
   - light.turn_off: step9
