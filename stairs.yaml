@@ -197,8 +197,7 @@ light:
   - single_light_id: step15
   effects:
   - addressable_rainbow:
-      width: 7
-      # width: 15
+      width: 15
   - addressable_color_wipe:
       name: Police
       add_led_interval: 500ms
