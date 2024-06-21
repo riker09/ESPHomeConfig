@@ -13,7 +13,7 @@ substitutions:
 number:
 # KP
 - platform: template
-  name: $friendly_name kp
+  name: kp
   icon: mdi:chart-bell-curve
   restore_value: true
   min_value: 0
@@ -26,7 +26,7 @@ number:
       id(rack_thermostat).set_kp( x );
 # KI
 - platform: template
-  name: $friendly_name ki
+  name: ki
   icon: mdi:chart-bell-curve
   restore_value: true
   min_value: 0
@@ -37,7 +37,7 @@ number:
 
 # KD
 - platform: template
-  name: $friendly_name kd
+  name: kd
   icon: mdi:chart-bell-curve
   restore_value: true
   min_value: -50
@@ -58,24 +58,69 @@ output:
 fan:
 - platform: speed
   output: fan_output
-  name: "${devicename_upper} Fan Speed"
+  name: Fan Speed
   id: "${devicename}_fan"
   speed_count: 100
 
 ## LED
 light:
 - platform: neopixelbus
-  type: GRB
+  type: GRBW
   variant: WS2812
   pin: GPIO3
-  num_leds: 1
-  name: "${devicename_upper} Light"
-  id: "${devicename}_led"
+  num_leds: 30
+  name: Strip
+  id: strip
   effects:
   - pulse:
-      name: Pulse
-      transition_length: 0.5s
-      update_interval: 0.5s
+      transition_length:
+        on_length: 1s
+        off_length: 500ms
+      update_interval: 1s
+      min_brightness: 15%
+      max_brightness: 70%
+  - addressable_scan:
+      scan_width: 5
+  - addressable_rainbow:
+  - addressable_color_wipe:
+      name: Police
+      colors:
+      - red: 100%
+        green: 0%
+        blue: 0%
+        white: 0%
+        num_leds: 5
+      - red: 0%
+        green: 0%
+        blue: 100%
+        white: 0%
+        num_leds: 5
+  - addressable_twinkle:
+      twinkle_probability: 10%
+      progress_interval: 20ms
+  - addressable_random_twinkle:
+      name: Random Twinkle
+      twinkle_probability: 10%
+      progress_interval: 20ms
+- platform: partition
+  id: strip_right
+  segments:
+    - id: strip
+      from: 0
+      to: 14
+  effects:
+  - addressable_scan:
+      move_interval: 3s
+- platform: partition
+  id: strip_left
+  segments:
+    - id: strip
+      from: 15
+      to: 29
+      reversed: true
+  effects:
+  - addressable_scan:
+      move_interval: 3s
 
 ## I2C
 i2c:
@@ -86,25 +131,18 @@ i2c:
 bme680_bsec:
   address: 0x77
   temperature_offset: 4
-  sample_rate: lp
+  sample_rate: ulp
 
 sensor:
 ## BME680
 - platform: bme680_bsec
   temperature:
-    name: "${devicename_upper} Temperature"
     id: bme680_temp
+    name: Temperature
+    sample_rate: lp
     accuracy_decimals: 1
-    # If you don't smooth the output readings
-    # the PID controller over reacts to small changes.
     filters:
-      # - sliding_window_moving_average:
-      #     window_size: 6
-      #     send_every: 1
-      #     send_first_at: 1
-      - exponential_moving_average:
-          alpha: 0.1
-          send_every: 1
+    - median
     on_value_range:
     - below: 26
       then:
@@ -117,23 +155,25 @@ sensor:
       then:
       - script.execute: led_red
   pressure:
-    name: "${devicename_upper} Pressure"
+    name: Pressure
+    sample_rate: lp
     accuracy_decimals: 2
+    filters:
+    - median
   humidity:
-    name: "${devicename_upper} Humidity"
+    name: Humidity
+    sample_rate: lp
     accuracy_decimals: 1
-  gas_resistance:
-    name: "${devicename_upper} Gas Resistance"
-    accuracy_decimals: 1
-  co2_equivalent:
-    name: "${devicename_upper} CO²"
-
+    filters:
+    - median
+  iaq:
+    id: iaq
 
 ## Fan speed
 - platform: pulse_counter
   pin: D4
-  name: "${devicename_upper} Fan RPM"
-  update_interval: 6s
+  name: Fan RPM
+  update_interval: 10s
   unit_of_measurement: rpm
   accuracy_decimals: 0
   icon: "mdi:fan"
@@ -143,7 +183,7 @@ sensor:
 # Take the "COOL" value of the pid and send
 # it to the frontend to graph the output voltage
 - platform: pid
-  name: "Fan Speed (PWM Voltage)"
+  id: fan_voltage
   climate_id: rack_thermostat
   type: COOL
 
@@ -151,92 +191,123 @@ sensor:
 # START THE FAN CONTROLLER SETUP
 
 - platform: template
-  name: $friendly_name p term
+  name: p term
   id: p_term
   unit_of_measurement: "%"
   accuracy_decimals: 2
 
 - platform: template
-  name: $friendly_name i term
+  name: i term
   id: i_term
   unit_of_measurement: "%"
   accuracy_decimals: 2
 
 - platform: template
-  name: $friendly_name d term
+  name: d term
   id: d_term
   unit_of_measurement: "%"
   accuracy_decimals: 2
 
 - platform: template
-  name: $friendly_name output value
+  name: output value
   unit_of_measurement: "%"
   id: o_term
   accuracy_decimals: 2
 
 - platform: template
-  name: $friendly_name error value
+  name: error value
   id: e_term
   accuracy_decimals: 2
 
 - platform: template
-  name: $friendly_name zero
+  name: zero
   id: zero_value
   update_interval: 60s
   lambda: |-
     return 0;
+
 - platform: template
-  name: $friendly_name zero percent
+  name: zero percent
   unit_of_measurement: "%"
   id: zero_value_percent
   update_interval: 60s
   lambda: |-
     return 0;
 
+text_sensor:
+- platform: template
+  name: "IAQ Classification"
+  icon: "mdi:checkbox-marked-circle-outline"
+  lambda: |-
+    if (int(id(iaq).state) <= 50) {
+      return {"Excellent"};
+    }
+    else if (int(id(iaq).state) <= 100) {
+      return {"Good"};
+    }
+    else if (int(id(iaq).state) <= 150) {
+      return {"Lightly polluted"};
+    }
+    else if (int(id(iaq).state) <= 200) {
+      return {"Moderately polluted"};
+    }
+    else if (int(id(iaq).state) <= 250) {
+      return {"Heavily polluted"};
+    }
+    else if (int(id(iaq).state) <= 350) {
+      return {"Severely polluted"};
+    }
+    else if (int(id(iaq).state) <= 500) {
+      return {"Extremely polluted"};
+    }
+    else {
+      return {"unknown"};
+    }
+
 # Expose a PID-controlled Thermostat
 # Manual: https://esphome.io/components/climate/pid.html
 climate:
-  - platform: pid
-    name: "Rack Fan Thermostat"
-    id: rack_thermostat
-    sensor: bme680_temp
+- platform: pid
+  name: Thermostat
+  id: rack_thermostat
+  sensor: bme680_temp
 
-    # It is summer right now, so 30c is a decent target.
-    default_target_temperature: 28°C
-    cool_output: fan_output
+  # It is summer right now, so 30c is a decent target.
+  default_target_temperature: 28°C
+  cool_output: fan_output
 
-    on_state:
-      - sensor.template.publish:
-          id: p_term
-          state: !lambda 'return -id(rack_thermostat).get_proportional_term() * 100.0;'
-      - sensor.template.publish:
-          id: i_term
-          state: !lambda 'return -id(rack_thermostat).get_integral_term()* 100.0;'
-      - sensor.template.publish:
-          id: d_term
-          state: !lambda 'return -id(rack_thermostat).get_derivative_term()* 100.0;'
-      - sensor.template.publish:
-          id: o_term
-          state: !lambda 'return -id(rack_thermostat).get_output_value()* 100.0;'
-      - sensor.template.publish:
-          id: e_term
-          state: !lambda 'return -id(rack_thermostat).get_error_value();'
+  on_state:
+    - sensor.template.publish:
+        id: p_term
+        state: !lambda 'return -id(rack_thermostat).get_proportional_term() * 100.0;'
+    - sensor.template.publish:
+        id: i_term
+        state: !lambda 'return -id(rack_thermostat).get_integral_term()* 100.0;'
+    - sensor.template.publish:
+        id: d_term
+        state: !lambda 'return -id(rack_thermostat).get_derivative_term()* 100.0;'
+    - sensor.template.publish:
+        id: o_term
+        state: !lambda 'return -id(rack_thermostat).get_output_value()* 100.0;'
+    - sensor.template.publish:
+        id: e_term
+        state: !lambda 'return -id(rack_thermostat).get_error_value();'
 
-    # dummy heater. enable this if using autotune
-    # heat_output: rack_heat_speed
+  # dummy heater. enable this if using autotune
+  # heat_output: rack_heat_speed
 
-    # The extents of the HA Thermostat
-    visual:
-      min_temperature: 20 °C
-      max_temperature: 40 °C
+  # The extents of the HA Thermostat
+  visual:
+    min_temperature: 20 °C
+    max_temperature: 40 °C
 
-    # See the README for setting up these parameters.
-    # These are over ridden by the number templates above.
-    control_parameters:
-      kp: 0.15
-      ki: 0.004
-      kd: 0.5
-      max_integral: 0.0
+  # See the README for setting up these parameters.
+  # These are over ridden by the number templates above.
+  control_parameters:
+    kp: 0.15
+    ki: 0.004
+    kd: 0.5
+    max_integral: 0.0
 
 
 ## Automations
@@ -245,48 +316,83 @@ script:
   # - id: led_pulsate
   #   then:
   #   - light.turn_on:
-  #       id: "${devicename}_led"
+  #       id: strip
   #       red: 1
   #       blue: 1
   #       green: 0
+  #       white: 0
   #       effect: pulse
   - id: led_blue
     then:
+    - light.turn_off: strip
     - light.turn_on:
-        id: "${devicename}_led"
+        id: strip_left
         red: 0
         blue: 1
         green: 0
+        white: 0
+        effect: Scan
+        brightness: .6
+    - light.turn_on:
+        id: strip_right
+        red: 0
+        blue: 1
+        green: 0
+        white: 0
+        effect: Scan
         brightness: .6
   - id: led_green
     then:
+    - light.turn_off: strip
     - light.turn_on:
-        id: "${devicename}_led"
+        id: strip_left
         red: 0
         blue: 0
         green: 1
+        white: 0
+        effect: Scan
+        brightness: .6
+    - light.turn_on:
+        id: strip_right
+        red: 0
+        blue: 0
+        green: 1
+        white: 0
+        effect: Scan
         brightness: .6
   - id: led_red
     then:
+    - light.turn_off: strip_left
+    - light.turn_off: strip_right
     - light.turn_on:
-        id: "${devicename}_led"
+        id: strip
         red: 1
         blue: 0
         green: 0
+        white: 0
+        effect: Pulse
         brightness: .6
   - id: led_pink
     then:
+    - light.turn_off: strip_left
+    - light.turn_off: strip_right
     - light.turn_on:
-        id: "${devicename}_led"
+        id: strip
         red: 1
         blue: 1
         green: 0
+        white: 0
+        effect: Pulse
         brightness: .6
   - id: led_yellow
     then:
+    - light.turn_off: strip_left
+    - light.turn_off: strip_right
     - light.turn_on:
-        id: "${devicename}_led"
+        id: strip
         red: 1
         blue: 0
         green: 1
+        white: 0
+        effect: Pulse
         brightness: .6
