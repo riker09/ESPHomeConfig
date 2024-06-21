@@ -53,6 +53,23 @@ light:
         white: 0%
         num_leds: 90
   - addressable_color_wipe:
+      name: Movie Poster
+      add_led_interval: 320ms
+      colors:
+      - num_leds: 60
+        red: 36%
+        blue: 100%
+        green: 5%
+      - num_leds: 60
+        red: 100%
+        blue: 5%
+        green: 52%
+      - num_leds: 60
+        red: 100%
+        blue: 9%
+        green: 1%
+
+  - addressable_color_wipe:
       name: Police
       add_led_interval: 50ms
       colors:
