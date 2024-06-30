@@ -1,0 +1,673 @@
+substitutions:
+  devicename: stairs
+  devicename_upper: Stairs
+
+  ## 15 LEDs per stair x 15 stairs = 225 LEDs in strip
+  num_leds: "225"
+
+  ## Time between toggling on/off the stairs
+  step_delay: "300ms"
+
+<<: !include .base32.yaml
+
+wifi:
+  fast_connect: true
+
+esphome:
+  name: ${devicename}
+  friendly_name: ${devicename_upper}
+  # Sets the lights to 50% on boot
+  on_boot:
+    priority: 700
+    then:
+    - light.turn_on:
+        id: strip
+        transition_length: 0s
+        brightness: 50%
+    - light.turn_off:
+        id: strip
+        transition_length: 0s
+    - light.turn_on:
+        id: steps
+        transition_length: 0s
+        brightness: 50%
+    - light.turn_off:
+        id: steps
+        transition_length: 0s
+
+## Warp Factor (Animation speed)
+number:
+- platform: template
+  id: warp_factor
+  name: Warp Factor
+  optimistic: true
+  step: 0.1
+  initial_value: 1
+  min_value: 0.1
+  max_value: 9.9
+
+binary_sensor:
+- platform: template
+  id: timer
+- platform: template
+  id: reverse
+  ## PIR
+- platform: gpio
+  pin: GPIO18
+  name: "Ground Floor"
+  id: pir_ground_floor
+  device_class: motion
+  on_press:
+    if:
+      # When the lights are out
+      condition:
+        and: &whenthelightsareout
+        - light.is_off: strip
+        - light.is_off: steps
+        - light.is_off: step1
+        - light.is_off: step2
+        - light.is_off: step3
+        - light.is_off: step4
+        - light.is_off: step5
+        - light.is_off: step6
+        - light.is_off: step7
+        - light.is_off: step8
+        - light.is_off: step9
+        - light.is_off: step10
+        - light.is_off: step11
+        - light.is_off: step12
+        - light.is_off: step13
+        - light.is_off: step14
+        - light.is_off: step15
+      then:
+      - lambda: id(timer).publish_state(true);
+      - lambda: id(reverse).publish_state(true);
+      - script.execute: bottom_to_top_on
+      else: &somelightison
+      # When any light is on
+      - if:
+          # Check if an OFF script is running
+          condition:
+            or:
+            - script.is_running: top_to_bottom_off
+            - script.is_running: bottom_to_top_off
+          # Kill off animation script and turn on all steps
+          then:
+          - script.stop: top_to_bottom_off
+          - script.stop: bottom_to_top_off
+          - script.execute: turn_on_all_steps
+  on_release: &timeout
+    then:
+    - script.execute:
+        id: timeout
+        delay_ms: 15000
+
+- platform: gpio
+  pin: GPIO19
+  name: "First Floor"
+  device_class: motion
+  on_press:
+    if:
+      # When the lights are out
+      condition:
+        and: *whenthelightsareout
+      then:
+      - lambda: id(timer).publish_state(true);
+      - lambda: id(reverse).publish_state(false);
+      - script.execute: top_to_bottom_on
+      else: *somelightison
+  on_release: *timeout
+
+  ## Button
+- platform: gpio
+  pin:
+    number: GPIO5
+    mode: INPUT_PULLUP
+    inverted: true
+  id: button
+  on_press:
+    if:
+      condition:
+        and: *whenthelightsareout
+      then:
+      - light.turn_on: &color
+          id: steps
+          transition_length: 0.3s
+          color_mode: RGB_WHITE
+          brightness: 0.33
+          white: 1.0
+          color_brightness: 0 ## Required to keep the RGB leds off
+          red: 0
+          blue: 0
+          green: 0
+      else:
+      - light.turn_off: strip
+      - light.turn_off: steps
+      - light.turn_off: step1
+      - light.turn_off: step2
+      - light.turn_off: step3
+      - light.turn_off: step4
+      - light.turn_off: step5
+      - light.turn_off: step6
+      - light.turn_off: step7
+      - light.turn_off: step8
+      - light.turn_off: step9
+      - light.turn_off: step10
+      - light.turn_off: step11
+      - light.turn_off: step12
+      - light.turn_off: step13
+      - light.turn_off: step14
+      - light.turn_off: step15
+
+## LED Strip
+light:
+- platform: neopixelbus
+  variant: SK6812
+  type: GRBW
+  pin: GPIO4
+  num_leds: "${num_leds}"
+  id: strip
+  name: "Full Strip"
+  restore_mode: ALWAYS_OFF
+  effects:
+  - addressable_twinkle:
+  - addressable_fireworks:
+  - addressable_flicker:
+      name: Flicker
+
+# Steps
+- platform: partition
+  name: Steps
+  id: steps
+  segments:
+  - single_light_id: step1
+  - single_light_id: step2
+  - single_light_id: step3
+  - single_light_id: step4
+  - single_light_id: step5
+  - single_light_id: step6
+  - single_light_id: step7
+  - single_light_id: step8
+  - single_light_id: step9
+  - single_light_id: step10
+  - single_light_id: step11
+  - single_light_id: step12
+  - single_light_id: step13
+  - single_light_id: step14
+  - single_light_id: step15
+  effects:
+  - addressable_rainbow:
+      width: 15
+  - addressable_color_wipe:
+      name: Police
+      add_led_interval: 500ms
+      colors:
+      - red: 100%
+        blue: 0%
+        green: 0%
+        white: 0%
+        num_leds: 1
+      - red: 0%
+        blue: 100%
+        green: 0%
+        white: 0%
+        num_leds: 1
+  - addressable_scan:
+      move_interval: 64ms
+  - addressable_lambda: &warpcore
+      name: Warp Core
+      lambda: |-
+        // Static variables keep their value even when
+        // stopping and starting the effect again
+        static uint32_t ms = 0;
+        static int16_t pos = 0;
+
+        float speed = (1 - id(warp_factor).state / 10) * 256;
+
+        // EXIT PREMATURELY WHEN IT'S NOT TIME TO RUN
+        // EITHER USE number.animation_speed OR SET A VALUE IN MILLISECONDS, EG. 16
+        if (millis() - ms < speed) {
+          return;
+        }
+
+        // PULSE SIZE
+        byte size = 1;
+
+        // PADDING
+        byte pad = floor((size - 1) / 2);
+        byte offset = size % 2 == 0 ? 1 : 0;
+
+        // DETERMINE MIDDLE
+        uint16_t middle = ceil(it.size() / 2);
+
+        // To reset static when stopping and starting the effect
+        // again you can use the initial_run variables
+        if (initial_run) {
+          ms = 0;
+          pos = 0 - pad;
+        }
+
+        it.all() = current_color.darken(128);
+
+        // START & END
+        int16_t start = pos;
+        int16_t end = it.size() - 1 - pos;
+
+        // PAD BEFORE
+        for (int i = 1; i <= pad; i++) {
+          // FROM END
+          if (end + i < it.size() && end + i >= middle) {
+            it[end + i] = current_color;
+          }
+          // FROM START
+          if (start + i > 0 && start + i < middle) {
+            it[start + i] = current_color;
+          }
+        }
+
+        // CENTER PIXEL
+        if (start >= 0 && start < middle) {
+          it[start] = current_color;
+
+          // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
+          if (offset > 0 && start - offset >= 0 && start - offset < middle) {
+            it[start - offset] = current_color;
+          }
+        }
+
+        // MIRRORED CENTER PIXEL
+        if (end < it.size() && end >= middle) {
+          it[end] = current_color;
+
+          // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
+          if (offset > 0 && end - offset < it.size() && end - offset >= middle) {
+            it[end - offset] = current_color;
+          }
+        }
+
+        // PAD AFTER
+        for (int i = 1; i <= pad; i++) {
+          // FROM START
+          if (start - i - offset > 0 && start - i - offset < middle) {
+            it[start - i - offset] = current_color;
+          }
+          // FROM END
+          if (end - i - offset >= middle && end - i - offset < it.size()) {
+            it[end - i - offset] = current_color;
+          }
+        }
+
+        // INCREASE POS
+        pos++;
+
+        if (pos > it.size()) {
+          pos = 0 - pad;
+        }
+
+        // WAIT FOR 500 MS (MAX) AFTER ANIMATION HAS REACHED THE MIDDLE (REACTION CHAMBER)
+        // ALLOW ANIMATION TO END SAFELY
+        if (pos > (middle + pad + 1 + offset) && (pos - middle) * speed > 500) {
+          pos = 0 - pad;
+        }
+
+        // UPDATE MS FOR THE NEXT RUN
+        ms = millis();
+
+# Separate full strip into 15 partitions (steps / stairs)
+- platform: partition
+  id: step1
+  segments:
+  - id: strip
+    from: 0
+    to: 14
+- platform: partition
+  id: step2
+  segments:
+  - id: strip
+    from: 15
+    to: 29
+    reversed: true
+- platform: partition
+  id: step3
+  segments:
+  - id: strip
+    from: 30
+    to: 44
+- platform: partition
+  id: step4
+  segments:
+  - id: strip
+    from: 45
+    to: 59
+    reversed: true
+- platform: partition
+  id: step5
+  segments:
+  - id: strip
+    from: 60
+    to: 74
+- platform: partition
+  id: step6
+  segments:
+  - id: strip
+    from: 75
+    to: 89
+    reversed: true
+- platform: partition
+  id: step7
+  segments:
+  - id: strip
+    from: 90
+    to: 104
+- platform: partition
+  id: step8
+  segments:
+  - id: strip
+    from: 105
+    to: 119
+    reversed: true
+- platform: partition
+  id: step9
+  segments:
+  - id: strip
+    from: 120
+    to: 134
+- platform: partition
+  id: step10
+  segments:
+  - id: strip
+    from: 135
+    to: 149
+    reversed: true
+- platform: partition
+  id: step11
+  segments:
+  - id: strip
+    from: 150
+    to: 164
+- platform: partition
+  id: step12
+  segments:
+  - id: strip
+    from: 165
+    to: 179
+    reversed: true
+- platform: partition
+  id: step13
+  segments:
+  - id: strip
+    from: 180
+    to: 194
+- platform: partition
+  id: step14
+  segments:
+  - id: strip
+    from: 195
+    to: 209
+    reversed: true
+- platform: partition
+  id: step15
+  segments:
+  - id: strip
+    from: 210
+    to: 224
+
+script:
+- id: timeout
+  mode: restart
+  parameters:
+    delay_ms: int
+  then:
+  - delay: !lambda return delay_ms;
+  - if:
+      condition:
+      - binary_sensor.is_on: reverse
+      then:
+      - script.execute: bottom_to_top_off
+      else:
+      - script.execute: top_to_bottom_off
+  - lambda: |-
+      id(timer).publish_state(false);
+
+- id: top_to_bottom_on
+  then:
+    ## Turn on the lights in proper order
+  - light.turn_on:
+      <<: *color
+      id: step1
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step2
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step3
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step4
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step5
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step6
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step7
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step8
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step9
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step10
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step11
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step12
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step13
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step14
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step15
+
+- id: top_to_bottom_off
+  then:
+  ## Turn off the lights in proper order
+  - light.turn_off: step1
+  - delay: ${step_delay}
+  - light.turn_off: step2
+  - delay: ${step_delay}
+  - light.turn_off: step3
+  - delay: ${step_delay}
+  - light.turn_off: step4
+  - delay: ${step_delay}
+  - light.turn_off: step5
+  - delay: ${step_delay}
+  - light.turn_off: step6
+  - delay: ${step_delay}
+  - light.turn_off: step7
+  - delay: ${step_delay}
+  - light.turn_off: step8
+  - delay: ${step_delay}
+  - light.turn_off: step9
+  - delay: ${step_delay}
+  - light.turn_off: step10
+  - delay: ${step_delay}
+  - light.turn_off: step11
+  - delay: ${step_delay}
+  - light.turn_off: step12
+  - delay: ${step_delay}
+  - light.turn_off: step13
+  - delay: ${step_delay}
+  - light.turn_off: step14
+  - delay: ${step_delay}
+  - light.turn_off: step15
+
+- id: bottom_to_top_on
+  then:
+  - lambda: |-
+      id(timer).publish_state(true);
+      id(reverse).publish_state(true);
+    ## Turn on the lights in proper order
+  - light.turn_on:
+      <<: *color
+      id: step15
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step14
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step13
+  - light.turn_on:
+      <<: *color
+      id: step12
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step11
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step10
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step9
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step8
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step7
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step6
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step5
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step4
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step3
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step2
+  - delay: ${step_delay}
+  - light.turn_on:
+      <<: *color
+      id: step1
+
+- id: bottom_to_top_off
+  then:
+  ## Turn off the lights in proper order
+  - light.turn_off: step15
+  - delay: ${step_delay}
+  - light.turn_off: step14
+  - delay: ${step_delay}
+  - light.turn_off: step13
+  - delay: ${step_delay}
+  - light.turn_off: step12
+  - delay: ${step_delay}
+  - light.turn_off: step11
+  - delay: ${step_delay}
+  - light.turn_off: step10
+  - delay: ${step_delay}
+  - light.turn_off: step9
+  - delay: ${step_delay}
+  - light.turn_off: step8
+  - delay: ${step_delay}
+  - light.turn_off: step7
+  - delay: ${step_delay}
+  - light.turn_off: step6
+  - delay: ${step_delay}
+  - light.turn_off: step5
+  - delay: ${step_delay}
+  - light.turn_off: step4
+  - delay: ${step_delay}
+  - light.turn_off: step3
+  - delay: ${step_delay}
+  - light.turn_off: step2
+  - delay: ${step_delay}
+  - light.turn_off: step1
+
+# Turn on all steps simultaneously
+- id: turn_on_all_steps
+  then:
+  - light.turn_on:
+      <<: *color
+      id: step1
+  - light.turn_on:
+      <<: *color
+      id: step2
+  - light.turn_on:
+      <<: *color
+      id: step3
+  - light.turn_on:
+      <<: *color
+      id: step4
+  - light.turn_on:
+      <<: *color
+      id: step5
+  - light.turn_on:
+      <<: *color
+      id: step6
+  - light.turn_on:
+      <<: *color
+      id: step7
+  - light.turn_on:
+      <<: *color
+      id: step8
+  - light.turn_on:
+      <<: *color
+      id: step9
+  - light.turn_on:
+      <<: *color
+      id: step10
+  - light.turn_on:
+      <<: *color
+      id: step11
+  - light.turn_on:
+      <<: *color
+      id: step12
+  - light.turn_on:
+      <<: *color
+      id: step13
+  - light.turn_on:
+      <<: *color
+      id: step14
+  - light.turn_on:
+      <<: *color
+      id: step15
