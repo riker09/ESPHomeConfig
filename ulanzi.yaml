@@ -75,7 +75,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/lubeda/EspHoMaTriXv2
-      ref: 2023.9.1
+      ref: 2024.3.0
     refresh: 60s
     components: [ ehmtxv2 ]
 
@@ -90,12 +90,11 @@ esphome:
       - ds1307.read_time:
 
 output:
-  - platform: ledc
-    pin: $buzzer_pin
-    id: rtttl_out
-
-rtttl:
-  output: rtttl_out
+  - platform: gpio
+    pin:
+      number: GPIO15
+      ignore_strapping_warning: true
+    id: buzzer_pin
 
 esp32:
   board: esp32dev
@@ -119,14 +118,14 @@ font:
   # Grab these from https://github.com/trip5/Matrix-Fonts
   # See https://github.com/lubeda/EspHoMaTriXv2#font
   # Store in a "fonts" subfolder of your ESPHome config folder or change paths below
-  - file: fonts/MatrixLight8.bdf
+  - file: fonts/MatrixLight6.bdf
     id: default_font
     glyphs:  |
-      ! "#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz°
-  - file: fonts/MatrixChunky6.bdf
+      ! "#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¦§©ª«®°±²³´µ¶¥·¹º»¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ
+  - file: fonts/MatrixLight8.bdf
     id: special_font
     glyphs:  |
-      ! "#$%&'()*+,-./0123456789:APMTapmt
+      ! "#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¦§©ª«®°±²³´µ¶¥·¹º»¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ
 
 binary_sensor:
   - platform: status
@@ -152,13 +151,6 @@ logger:
   level: WARN
 
 api:
-  services:
-    - service: tune
-      variables:
-        tune: string
-      then:
-        - rtttl.play:
-            rtttl: !lambda 'return tune;'
 
 sensor:
   - platform: sht3xd
@@ -216,7 +208,7 @@ sensor:
             }
 
 ota:
-  password: !secret ota_password
+  - platform: esphome
 
 wifi:
   ssid: !secret wifi_ssid
@@ -318,9 +310,8 @@ ehmtxv2:
   # special_font_id: default_font
   # Comment out below if using mateine font
   default_font_id: default_font
-  default_font_yoffset: 8
+  default_font_yoffset: 7
   special_font_id: special_font
-  special_font_yoffset: 6
   # until here
   blend_steps: 16
   week_start_monday: true
@@ -356,7 +347,5 @@ ehmtxv2:
   on_start_running:
     then:
       lambda: |-
-        id(rgb8x32)->bitmap_screen("[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,63519,63519,63519,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,0,0,0,0,2016,0,0,0,0,0,0,0,0,0,0,31,0,0,0,0,0,0,0,0,0,63488,0,63488,0,0,0,63519,0,0,0,0,2016,2016,0,0,0,65514,0,65514,0,0,0,31,0,0,0,64512,0,0,64512,0,63488,63488,0,63488,63488,0,0,63519,63519,63519,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,31,31,31,0,0,0,64512,64512,0,0,63488,63488,63488,63488,63488,0,0,63519,0,0,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,31,0,0,0,0,64512,64512,0,0,0,63488,63488,63488,0,0,0,63519,63519,63519,63519,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,0,31,31,0,64512,0,0,64512,0,0,0,63488,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",1,10);
-        id(rgb8x32)->bitmap_small("[2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,0,2016,0,2016,0,31,31,0,0,0,2016,0,31,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,31,31,31]", "2023.x.y", 1, 10);
-        id(rgb8x32)->clock_screen(10,10);
-        id(rgb8x32)->date_screen(10,5);
+        id(rgb8x32)->bitmap_screen("[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,63519,63519,63519,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,63519,0,0,0,0,2016,0,0,0,0,0,0,0,0,0,0,31,0,0,0,0,0,0,0,0,0,63488,0,63488,0,0,0,63519,0,0,0,0,2016,2016,0,0,0,65514,0,65514,0,0,0,31,0,0,0,64512,0,0,64512,0,63488,63488,0,63488,63488,0,0,63519,63519,63519,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,31,31,31,0,0,0,64512,64512,0,0,63488,63488,63488,63488,63488,0,0,63519,0,0,0,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,31,0,0,0,0,64512,64512,0,0,0,63488,63488,63488,0,0,0,63519,63519,63519,63519,0,2016,0,2016,0,65514,0,65514,0,65514,0,0,0,31,31,0,64512,0,0,64512,0,0,0,63488,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]", 0, 10);
+        id(rgb8x32)->bitmap_small("[2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,2016,0,0,0,0,2016,0,2016,0,31,31,0,0,0,2016,0,31,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,0,0,0,0,0,0,31,31,31,31]", "2024.3.0", 0, 10);
