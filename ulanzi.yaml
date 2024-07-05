@@ -331,6 +331,8 @@ ehmtxv2:
       lameid: 54281
     - id: washing_done
       lameid: 54282
+    - id: balloons
+      lameid: 54735
     - id: sleep8x32
       url: https://user-images.githubusercontent.com/16407309/224850723-634c9b2d-55d9-44f2-9f93-765c0485b090.gif
   on_next_screen:
