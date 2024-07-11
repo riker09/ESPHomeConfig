@@ -6,254 +6,254 @@ substitutions:
 
 ## Animation speed
 number:
-- platform: template
-  id: animation_speed
-  name: Animation Speed
-  optimistic: true
-  step: 16
-  min_value: 16
-  max_value: 320
-- platform: template
-  id: animation_size
-  name: Animation Size
-  optimistic: true
-  step: 1
-  min_value: 1
-  max_value: 12
+  - platform: template
+    id: animation_speed
+    name: Animation Speed
+    optimistic: true
+    step: 16
+    min_value: 16
+    max_value: 320
+  - platform: template
+    id: animation_size
+    name: Animation Size
+    optimistic: true
+    step: 1
+    min_value: 1
+    max_value: 12
 
 ## LED
 light:
-- platform: neopixelbus
-  variant: WS2812X
-  pin: GPIO13
-  num_leds: 179
-  name: "Full Strip"
-  id: strip
-  # Limit max brightness
-  effects:
-  - pulse:
-      update_interval: 2s
-      transition_length: 1s
-      min_brightness: 15%
-      max_brightness: 60%
-  - addressable_rainbow:
-      width: 179
-  - addressable_color_wipe:
-      name: Cyberpunk
-      add_led_interval: 200ms
-      colors:
-      - red: 80%
-        blue: 100%
-        green: 0%
-        white: 0%
-        num_leds: 90
-      - red: 0%
-        blue: 100%
-        green: 80%
-        white: 0%
-        num_leds: 90
-  - addressable_color_wipe:
-      name: Movie Poster
-      add_led_interval: 320ms
-      colors:
-      - num_leds: 60
-        red: 36%
-        blue: 100%
-        green: 5%
-      - num_leds: 60
-        red: 100%
-        blue: 5%
-        green: 52%
-      - num_leds: 60
-        red: 100%
-        blue: 9%
-        green: 1%
+  - platform: neopixelbus
+    variant: WS2812X
+    pin: GPIO13
+    num_leds: 179
+    name: "Full Strip"
+    id: strip
+    # Limit max brightness
+    effects:
+      - pulse:
+          update_interval: 2s
+          transition_length: 1s
+          min_brightness: 15%
+          max_brightness: 60%
+      - addressable_rainbow:
+          width: 179
+      - addressable_color_wipe:
+          name: Cyberpunk
+          add_led_interval: 200ms
+          colors:
+            - red: 80%
+              blue: 100%
+              green: 0%
+              white: 0%
+              num_leds: 90
+            - red: 0%
+              blue: 100%
+              green: 80%
+              white: 0%
+              num_leds: 90
+      - addressable_color_wipe:
+          name: Movie Poster
+          add_led_interval: 320ms
+          colors:
+            - num_leds: 60
+              red: 36%
+              blue: 100%
+              green: 5%
+            - num_leds: 60
+              red: 100%
+              blue: 5%
+              green: 52%
+            - num_leds: 60
+              red: 100%
+              blue: 9%
+              green: 1%
 
-  - addressable_color_wipe:
-      name: Police
-      add_led_interval: 50ms
-      colors:
-      - red: 100%
-        blue: 0%
-        green: 0%
-        white: 0%
-        num_leds: 90
-      - red: 0%
-        blue: 100%
-        green: 0%
-        white: 0%
-        num_leds: 90
-  - addressable_scan:
-      scan_width: 20
-      move_interval: 20ms
-  - addressable_twinkle:
-  - addressable_fireworks:
-  - addressable_flicker:
-      name: Flicker
+      - addressable_color_wipe:
+          name: Police
+          add_led_interval: 50ms
+          colors:
+            - red: 100%
+              blue: 0%
+              green: 0%
+              white: 0%
+              num_leds: 90
+            - red: 0%
+              blue: 100%
+              green: 0%
+              white: 0%
+              num_leds: 90
+      - addressable_scan:
+          scan_width: 20
+          move_interval: 20ms
+      - addressable_twinkle:
+      - addressable_fireworks:
+      - addressable_flicker:
+          name: Flicker
 
-- platform: partition
-  name: "Bottom"
-  segments:
-  - id: strip
-    from: 150
-    to: 178
-  - id: strip
-    from: 0
-    to: 28
-  effects:
-  - addressable_scan:
-      scan_width: 8
-      move_interval: 33ms
-  - addressable_lambda: &warpcore
-      name: Warp Core
-      lambda: |-
-        // Static variables keep their value even when
-        // stopping and starting the effect again
-        static uint32_t ms = 0;
-        static int16_t pos = 0;
+  - platform: partition
+    name: "Bottom"
+    segments:
+      - id: strip
+        from: 150
+        to: 178
+      - id: strip
+        from: 0
+        to: 28
+    effects:
+      - addressable_scan:
+          scan_width: 8
+          move_interval: 33ms
+      - addressable_lambda: &warpcore
+          name: Warp Core
+          lambda: |-
+            // Static variables keep their value even when
+            // stopping and starting the effect again
+            static uint32_t ms = 0;
+            static int16_t pos = 0;
 
-        uint16_t cycle = id(animation_speed).state;
+            uint16_t cycle = id(animation_speed).state;
 
-        // EXIT PREMATURELY WHEN IT'S NOT TIME TO RUN
-        // EITHER USE number.animation_speed OR SET A VALUE IN MS, EG. 16
-        if (millis() - ms < cycle) {
-          return;
-        }
+            // EXIT PREMATURELY WHEN IT'S NOT TIME TO RUN
+            // EITHER USE number.animation_speed OR SET A VALUE IN MS, EG. 16
+            if (millis() - ms < cycle) {
+              return;
+            }
 
-        // PULSE SIZE
-        // EITHER USE number.animation_size OR SET A VALUE IN PIXEL, EG. 5
-        byte size = id(animation_size).state;
+            // PULSE SIZE
+            // EITHER USE number.animation_size OR SET A VALUE IN PIXEL, EG. 5
+            byte size = id(animation_size).state;
 
-        // PADDING
-        byte pad = floor((size - 1) / 2);
-        byte offset = size % 2 == 0 ? 1 : 0;
+            // PADDING
+            byte pad = floor((size - 1) / 2);
+            byte offset = size % 2 == 0 ? 1 : 0;
 
-        // DETERMINE MIDDLE
-        uint16_t middle = ceil(it.size() / 2);
+            // DETERMINE MIDDLE
+            uint16_t middle = ceil(it.size() / 2);
 
-        // To reset static when stopping and starting the effect
-        // again you can use the initial_run variables
-        if (initial_run) {
-          ms = 0;
-          pos = 0 - pad;
-        }
+            // To reset static when stopping and starting the effect
+            // again you can use the initial_run variables
+            if (initial_run) {
+              ms = 0;
+              pos = 0 - pad;
+            }
 
-        it.all() = Color::BLACK;
+            it.all() = Color::BLACK;
 
-        // START & END
-        int16_t start = pos;
-        int16_t end = it.size() - 1 - pos;
+            // START & END
+            int16_t start = pos;
+            int16_t end = it.size() - 1 - pos;
 
-        // PAD BEFORE
-        for (int i = 1; i <= pad; i++) {
-          // FROM END
-          if (end + i < it.size() && end + i >= middle) {
-            it[end + i] = current_color;
-          }
-          // FROM START
-          if (start + i > 0 && start + i < middle) {
-            it[start + i] = current_color;
-          }
-        }
+            // PAD BEFORE
+            for (int i = 1; i <= pad; i++) {
+              // FROM END
+              if (end + i < it.size() && end + i >= middle) {
+                it[end + i] = current_color;
+              }
+              // FROM START
+              if (start + i > 0 && start + i < middle) {
+                it[start + i] = current_color;
+              }
+            }
 
-        // CENTER PIXEL
-        if (start >= 0 && start < middle) {
-          it[start] = current_color;
+            // CENTER PIXEL
+            if (start >= 0 && start < middle) {
+              it[start] = current_color;
 
-          // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
-          if (offset > 0 && start - offset >= 0 && start - offset < middle) {
-            it[start - offset] = current_color;
-          }
-        }
+              // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
+              if (offset > 0 && start - offset >= 0 && start - offset < middle) {
+                it[start - offset] = current_color;
+              }
+            }
 
-        // MIRRORED CENTER PIXEL
-        if (end < it.size() && end >= middle) {
-          it[end] = current_color;
+            // MIRRORED CENTER PIXEL
+            if (end < it.size() && end >= middle) {
+              it[end] = current_color;
 
-          // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
-          if (offset > 0 && end - offset < it.size() && end - offset >= middle) {
-            it[end - offset] = current_color;
-          }
-        }
+              // ADD ONE EXTRA PIXEL AFTER CENTER WHEN SIZE IS AN EVEN NUMBER
+              if (offset > 0 && end - offset < it.size() && end - offset >= middle) {
+                it[end - offset] = current_color;
+              }
+            }
 
-        // PAD AFTER
-        for (int i = 1; i <= pad; i++) {
-          // FROM START
-          if (start - i - offset > 0 && start - i - offset < middle) {
-            it[start - i - offset] = current_color;
-          }
-          // FROM END
-          if (end - i - offset >= middle && end - i - offset < it.size()) {
-            it[end - i - offset] = current_color;
-          }
-        }
+            // PAD AFTER
+            for (int i = 1; i <= pad; i++) {
+              // FROM START
+              if (start - i - offset > 0 && start - i - offset < middle) {
+                it[start - i - offset] = current_color;
+              }
+              // FROM END
+              if (end - i - offset >= middle && end - i - offset < it.size()) {
+                it[end - i - offset] = current_color;
+              }
+            }
 
-        // INCREASE POS
-        pos++;
+            // INCREASE POS
+            pos++;
 
-        if (pos > it.size()) {
-          pos = 0 - pad;
-        }
+            if (pos > it.size()) {
+              pos = 0 - pad;
+            }
 
-        // WAIT FOR 500 MS (MAX) AFTER ANIMATION HAS REACHED THE MIDDLE (REACTION CHAMBER)
-        // ALLOW ANIMATION TO END SAFELY
-        if (pos > (middle + pad + 1 + offset) && (pos - middle) * cycle > 500) {
-          pos = 0 - pad;
-        }
+            // WAIT FOR 500 MS (MAX) AFTER ANIMATION HAS REACHED THE MIDDLE (REACTION CHAMBER)
+            // ALLOW ANIMATION TO END SAFELY
+            if (pos > (middle + pad + 1 + offset) && (pos - middle) * cycle > 500) {
+              pos = 0 - pad;
+            }
 
-        // UPDATE MS FOR THE NEXT RUN
-        ms = millis();
+            // UPDATE MS FOR THE NEXT RUN
+            ms = millis();
 
-- platform: partition
-  name: "Left"
-  segments:
-  - id: strip
-    from: 29
-    to: 59
-  effects:
-    addressable_lambda: *warpcore
-- platform: partition
-  name: "Top"
-  segments:
-  - id: strip
-    from: 60
-    to: 118
-  effects:
-  - addressable_scan:
-      scan_width: 8
-      move_interval: 33ms
-- platform: partition
-  name: "Right"
-  segments:
-  - id: strip
-    from: 119
-    to: 149
-  effects:
-    addressable_lambda: *warpcore
-- platform: partition
-  name: "Full Left"
-  segments:
-  - id: strip
-    from: 0
-    to: 28
-  - id: strip
-    from: 29
-    to: 59
-  - id: strip
-    from: 60
-    to: 89
-- platform: partition
-  name: "Full Right"
-  segments:
-  - id: strip
-    from: 90
-    to: 118
-  - id: strip
-    from: 119
-    to: 149
-  - id: strip
-    from: 150
-    to: 178
+  - platform: partition
+    name: "Left"
+    segments:
+      - id: strip
+        from: 29
+        to: 59
+    effects:
+      addressable_lambda: *warpcore
+  - platform: partition
+    name: "Top"
+    segments:
+      - id: strip
+        from: 60
+        to: 118
+    effects:
+      - addressable_scan:
+          scan_width: 8
+          move_interval: 33ms
+  - platform: partition
+    name: "Right"
+    segments:
+      - id: strip
+        from: 119
+        to: 149
+    effects:
+      addressable_lambda: *warpcore
+  - platform: partition
+    name: "Full Left"
+    segments:
+      - id: strip
+        from: 0
+        to: 28
+      - id: strip
+        from: 29
+        to: 59
+      - id: strip
+        from: 60
+        to: 89
+  - platform: partition
+    name: "Full Right"
+    segments:
+      - id: strip
+        from: 90
+        to: 118
+      - id: strip
+        from: 119
+        to: 149
+      - id: strip
+        from: 150
+        to: 178
 
 i2c:
 
@@ -261,115 +261,114 @@ bme680_bsec:
   address: 0x77
 
 sensor:
-# BME680
-- platform: bme680_bsec
-  temperature:
-    name: BME680 Temperature
-    filters:
-      - median
-  humidity:
-    name: BME680 Humidity
-    filters:
-      - median
-  pressure:
-    name: BME680 Pressure
-    filters:
-      - median
-  iaq:
-    name: BME680 IAQ Index
-    id: iaq
-    filters:
-      - median
+  # BME680
+  - platform: bme680_bsec
+    temperature:
+      name: BME680 Temperature
+      filters:
+        - median
+    humidity:
+      name: BME680 Humidity
+      filters:
+        - median
+    pressure:
+      name: BME680 Pressure
+      filters:
+        - median
+    iaq:
+      name: BME680 IAQ Index
+      id: iaq
+      filters:
+        - median
 
-# DHT22
-- platform: dht
-  pin: GPIO32
-  model: DHT22_TYPE2
-  temperature:
-    name: DHT22 Temperature
-  humidity:
-    name: DHT22 Humidity
-    accuracy_decimals: 1
+  # DHT22
+  - platform: dht
+    pin: GPIO32
+    model: DHT22_TYPE2
+    temperature:
+      name: DHT22 Temperature
+    humidity:
+      name: DHT22 Humidity
+      accuracy_decimals: 1
 
-# Rotary Encoder
-- platform: rotary_encoder
-  pin_a: GPIO27 # brown
-  pin_b: GPIO26
-  id: knob
-  name: Rotary Encoder
-  restore_mode: ALWAYS_ZERO
-  min_value: 0
-  max_value: 31
-  on_value:
-    then:
-    - light.turn_on:
-        id: strip
-        transition_length: 50ms
-        brightness: !lambda "return x / 31;"
+  # Rotary Encoder
+  - platform: rotary_encoder
+    pin_a: GPIO27 # brown
+    pin_b: GPIO26
+    id: knob
+    name: Rotary Encoder
+    restore_mode: ALWAYS_ZERO
+    min_value: 0
+    max_value: 31
+    on_value:
+      then:
+        - light.turn_on:
+            id: strip
+            transition_length: 50ms
+            brightness: !lambda "return x / 31;"
 
 # Rotary Push Button
 binary_sensor:
-- platform: gpio
-  pin:
-    number: GPIO25
-    inverted: true
-  id: button
-  filters:
-  - delayed_on: 10ms
-  - delayed_off: 10ms
-  on_click:
-    # Short press
-    min_length: 50ms
-    max_length: 350ms
-    then:
-    - if:
-        condition:
-          light.is_off: strip
-        then:
-        - sensor.rotary_encoder.set_value:
-            id: knob
-            value: 15
-        else:
-        - light.turn_off: strip
-    # Double click
-  # on_double_click:
-  #   then:
-  #   - script.execute: next_effect
-
+  - platform: gpio
+    pin:
+      number: GPIO25
+      inverted: true
+    id: button
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+    on_click:
+      # Short press
+      min_length: 50ms
+      max_length: 350ms
+      then:
+        - if:
+            condition:
+              light.is_off: strip
+            then:
+              - sensor.rotary_encoder.set_value:
+                  id: knob
+                  value: 15
+            else:
+              - light.turn_off: strip
+      # Double click
+    # on_double_click:
+    #   then:
+    #   - script.execute: next_effect
 
 text_sensor:
-- platform: bme680_bsec
-  iaq_accuracy:
-    name: "BME680 IAQ Accuracy"
+  - platform: bme680_bsec
+    iaq_accuracy:
+      name: "BME680 IAQ Accuracy"
 
-- platform: template
-  name: "BME680 IAQ Classification"
-  icon: "mdi:checkbox-marked-circle-outline"
-  lambda: |-
-    if ( int(id(iaq).state) <= 50) {
-      return {"Excellent"};
-    }
-    else if (int(id(iaq).state) >= 51 && int(id(iaq).state) <= 100) {
-      return {"Good"};
-    }
-    else if (int(id(iaq).state) >= 101 && int(id(iaq).state) <= 150) {
-      return {"Lightly polluted"};
-    }
-    else if (int(id(iaq).state) >= 151 && int(id(iaq).state) <= 200) {
-      return {"Moderately polluted"};
-    }
-    else if (int(id(iaq).state) >= 201 && int(id(iaq).state) <= 250) {
-      return {"Heavily polluted"};
-    }
-    else if (int(id(iaq).state) >= 251 && int(id(iaq).state) <= 350) {
-      return {"Severely polluted"};
-    }
-    else if (int(id(iaq).state) >= 351) {
-      return {"Extremely polluted"};
-    }
-    else {
-      return {"error"};
-    }
+  - platform: template
+    name: "BME680 IAQ Classification"
+    icon: "mdi:checkbox-marked-circle-outline"
+    lambda: |-
+      if ( int(id(iaq).state) <= 50) {
+        return {"Excellent"};
+      }
+      else if (int(id(iaq).state) >= 51 && int(id(iaq).state) <= 100) {
+        return {"Good"};
+      }
+      else if (int(id(iaq).state) >= 101 && int(id(iaq).state) <= 150) {
+        return {"Lightly polluted"};
+      }
+      else if (int(id(iaq).state) >= 151 && int(id(iaq).state) <= 200) {
+        return {"Moderately polluted"};
+      }
+      else if (int(id(iaq).state) >= 201 && int(id(iaq).state) <= 250) {
+        return {"Heavily polluted"};
+      }
+      else if (int(id(iaq).state) >= 251 && int(id(iaq).state) <= 350) {
+        return {"Severely polluted"};
+      }
+      else if (int(id(iaq).state) >= 351) {
+        return {"Extremely polluted"};
+      }
+      else {
+        return {"error"};
+      }
 
 # # Globals
 # globals:

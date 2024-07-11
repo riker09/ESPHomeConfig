@@ -5,217 +5,213 @@ substitutions:
 <<: !include ./.base.yaml
 
 sensor:
-## DHT22
-- platform: dht
-  pin: D4
-  model: AM2302
-  temperature:
-    name: "${devicename_upper} Temperature"
-  humidity:
-    name: "${devicename_upper} Humidity"
-  update_interval: 30s
+  ## DHT22
+  - platform: dht
+    pin: D4
+    model: AM2302
+    temperature:
+      name: "${devicename_upper} Temperature"
+    humidity:
+      name: "${devicename_upper} Humidity"
+    update_interval: 30s
 
-# Rotary Encoder
-- platform: rotary_encoder
-  pin_a: D7
-  pin_b: D6
-  id: knob
-  restore_mode: ALWAYS_ZERO
-  min_value: 0
-  max_value: 255
-  resolution: 4
-  on_value:
-    then:
-      ## Color
-    - if:
-        condition:
-          lambda: 'if (id(current_mode).state == "color") { return true; } else { return false; }'
-        then:
-        - script.execute: colored_light
-      ## Brightness
-    - if:
-        condition:
-          lambda: 'if (id(current_mode).state == "brightness") { return true; } else { return false; }'
-        then:
-        - light.turn_on:
-            id: strip
-            white: 0%
-            brightness: !lambda "return x / 255.0;"
-
-
-binary_sensor:
-- platform: gpio
-  pin:
-    number: D5
-    inverted: true
-  id: button
-  filters:
-  - delayed_on: 10ms
-  - delayed_off: 10ms
-  on_click:
-    ## Short press
-  - then:
-    - if:
-        condition:
-          light.is_off: strip
-        then:
-        - script.execute: colored_light
-        else:
-          ## Check if effect is running
+  # Rotary Encoder
+  - platform: rotary_encoder
+    pin_a: D7
+    pin_b: D6
+    id: knob
+    restore_mode: ALWAYS_ZERO
+    min_value: 0
+    max_value: 255
+    resolution: 4
+    on_value:
+      then:
+        ## Color
         - if:
             condition:
-              lambda: return id(strip).get_effect_name() != "None";
+              lambda: 'if (id(current_mode).state == "color") { return true; } else { return false; }'
             then:
-            - script.execute: colored_light
-            else:
-            - script.execute: next_mode
-    ## Long press
-  - min_length: 1000ms
-    max_length: 3000ms
-    then:
-    - light.turn_off: strip
-  ## Double click
-  on_double_click:
-    then:
-    - script.execute: next_effect
+              - script.execute: colored_light
+          ## Brightness
+        - if:
+            condition:
+              lambda: 'if (id(current_mode).state == "brightness") { return true; } else { return false; }'
+            then:
+              - light.turn_on:
+                  id: strip
+                  white: 0%
+                  brightness: !lambda "return x / 255.0;"
 
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: D5
+      inverted: true
+    id: button
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+    on_click:
+      ## Short press
+      - then:
+          - if:
+              condition:
+                light.is_off: strip
+              then:
+                - script.execute: colored_light
+              else:
+                ## Check if effect is running
+                - if:
+                    condition:
+                      lambda: return id(strip).get_effect_name() != "None";
+                    then:
+                      - script.execute: colored_light
+                    else:
+                      - script.execute: next_mode
+        ## Long press
+      - min_length: 1000ms
+        max_length: 3000ms
+        then:
+          - light.turn_off: strip
+    ## Double click
+    on_double_click:
+      then:
+        - script.execute: next_effect
 
 light:
-- platform: neopixelbus
-  type: GRB
-  variant: WS2812
-  pin: D2
-  num_leds: 117
-  restore_mode: ALWAYS_OFF
-  id: strip
-  name: "Strip"
-  default_transition_length: 0.3s
-  effects:
-  - addressable_rainbow:
-  - addressable_color_wipe:
-      colors:
-        random: true
-        num_leds: 3
-  - addressable_scan:
-      move_interval: 50ms
-      scan_width: 5
-  - addressable_twinkle:
-  - pulse:
-  - addressable_fireworks:
-  - addressable_fireworks:
-      name: Random Fireworks
-      use_random_color: true
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2812
+    pin: D2
+    num_leds: 117
+    restore_mode: ALWAYS_OFF
+    id: strip
+    name: "Strip"
+    default_transition_length: 0.3s
+    effects:
+      - addressable_rainbow:
+      - addressable_color_wipe:
+          colors:
+            random: true
+            num_leds: 3
+      - addressable_scan:
+          move_interval: 50ms
+          scan_width: 5
+      - addressable_twinkle:
+      - pulse:
+      - addressable_fireworks:
+      - addressable_fireworks:
+          name: Random Fireworks
+          use_random_color: true
 
 select:
   ## Current Mode
-- platform: template
-  id: current_mode
-  internal: true
-  optimistic: true
-  options:
-  - color
-  - brightness
-  on_value:
-  - logger.log:
-      format: "CURRENT STATE IS: %s"
-      args: ['x.c_str()']
-
+  - platform: template
+    id: current_mode
+    internal: true
+    optimistic: true
+    options:
+      - color
+      - brightness
+    on_value:
+      - logger.log:
+          format: "CURRENT STATE IS: %s"
+          args: ["x.c_str()"]
 
 globals:
-- id: current_mode_int
-  type: int
-  restore_value: no
-  initial_value: '0'
-- id: current_effect_int
-  type: int
-  restore_value: no
-  initial_value: '0'
-
+  - id: current_mode_int
+    type: int
+    restore_value: no
+    initial_value: "0"
+  - id: current_effect_int
+    type: int
+    restore_value: no
+    initial_value: "0"
 
 script:
   ## Script for activating colored light
-- id: colored_light
-  then:
-  - lambda: |-
-      float v = id(knob).state / 255;
-      if (v != v) { // Test for NaN, after boot knob is inited with NaN (weird!)
-        v = 0;
-      }
-      float a = (1 - v) / 0.2;
-      int X = floor(a);
-      float Y = (floor)(255 * (a - X));
-      float r = 0;
-      float g = 0;
-      float b = 0;
+  - id: colored_light
+    then:
+      - lambda: |-
+          float v = id(knob).state / 255;
+          if (v != v) { // Test for NaN, after boot knob is inited with NaN (weird!)
+            v = 0;
+          }
+          float a = (1 - v) / 0.2;
+          int X = floor(a);
+          float Y = (floor)(255 * (a - X));
+          float r = 0;
+          float g = 0;
+          float b = 0;
 
-      switch (X) {
-        case 0: r=255; g=Y; b=0; break;
-        case 1: r=255-Y; g=255; b=0; break;
-        case 2: r=0; g=255; b=Y; break;
-        case 3: r=0; g=255-Y; b=255; break;
-        case 4: r=Y; g=0; b=255; break;
-        case 5: r=255; g=0; b=255; break;
-      }
+          switch (X) {
+            case 0: r=255; g=Y; b=0; break;
+            case 1: r=255-Y; g=255; b=0; break;
+            case 2: r=0; g=255; b=Y; break;
+            case 3: r=0; g=255-Y; b=255; break;
+            case 4: r=Y; g=0; b=255; break;
+            case 5: r=255; g=0; b=255; break;
+          }
 
-      auto call = id(strip).turn_on();
-      call.set_brightness(0.6);
-      call.set_color_mode(ColorMode::RGB);
-      call.set_rgb(r / 255, g / 255, b / 255);
-      call.perform();
+          auto call = id(strip).turn_on();
+          call.set_brightness(0.6);
+          call.set_color_mode(ColorMode::RGB);
+          call.set_rgb(r / 255, g / 255, b / 255);
+          call.perform();
 
-  ## Whenever this script is called the next mode is activated
-- id: next_mode
-  then:
-    ## Set next mode
-  - lambda: |-
-      if (id(current_mode_int) < 1) {
-        id(current_mode_int) += 1;
-      } else {
-        id(current_mode_int) = 0;
-      }
+    ## Whenever this script is called the next mode is activated
+  - id: next_mode
+    then:
+      ## Set next mode
+      - lambda: |-
+          if (id(current_mode_int) < 1) {
+            id(current_mode_int) += 1;
+          } else {
+            id(current_mode_int) = 0;
+          }
 
-      switch (id(current_mode_int)) {
-        case 1:
-          id(current_mode).publish_state("color");
-          break;
-        default:
-          id(current_mode).publish_state("brightness");
-          break;
-      }
+          switch (id(current_mode_int)) {
+            case 1:
+              id(current_mode).publish_state("color");
+              break;
+            default:
+              id(current_mode).publish_state("brightness");
+              break;
+          }
 
-- id: next_effect
-  then:
-  - lambda: |-
-      if (id(current_effect_int) < 6) {
-        id(current_effect_int) += 1;
-      } else {
-        id(current_effect_int) = 0;
-      }
+  - id: next_effect
+    then:
+      - lambda: |-
+          if (id(current_effect_int) < 6) {
+            id(current_effect_int) += 1;
+          } else {
+            id(current_effect_int) = 0;
+          }
 
-      auto call = id(strip).turn_on();
+          auto call = id(strip).turn_on();
 
-      switch(id(current_effect_int)) {
-        case 1:
-          call.set_effect("Color Wipe");
-          break;
-        case 2:
-          call.set_effect("Scan");
-          break;
-        case 3:
-          call.set_effect("Twinkle");
-          break;
-        case 4:
-          call.set_effect("Fireworks");
-          break;
-        case 5:
-          call.set_effect("Random Fireworks");
-          break;
-        case 6:
-          call.set_effect("Pulse");
-          break;
-        default:
-          call.set_effect("Rainbow");
-          break;
-      }
+          switch(id(current_effect_int)) {
+            case 1:
+              call.set_effect("Color Wipe");
+              break;
+            case 2:
+              call.set_effect("Scan");
+              break;
+            case 3:
+              call.set_effect("Twinkle");
+              break;
+            case 4:
+              call.set_effect("Fireworks");
+              break;
+            case 5:
+              call.set_effect("Random Fireworks");
+              break;
+            case 6:
+              call.set_effect("Pulse");
+              break;
+            default:
+              call.set_effect("Rainbow");
+              break;
+          }
 
-      call.perform();
+          call.perform();

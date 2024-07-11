@@ -5,122 +5,120 @@ substitutions:
 
 <<: !include ./.base.yaml
 
-
 ## RECEIVE kp,ki and kd parameters from input_text.kx helpers in
 # Home Assistant. See the PID controller below
 # These helper values will get saved to flash thus permanently over-riding
 # the initial values set in the PID below.
 number:
-# KP
-- platform: template
-  name: kp
-  icon: mdi:chart-bell-curve
-  restore_value: true
-  min_value: 0
-  max_value: 50
-  step: 0.001
-  set_action:
-    lambda: |-
-      // ESP_LOGI("main", "!!!!!! kp from boot %d", id("rack_fan_kp") );
-      // id(rack_thermostat).set_kp( id("$friendly_name kp") );
-      id(rack_thermostat).set_kp( x );
-# KI
-- platform: template
-  name: ki
-  icon: mdi:chart-bell-curve
-  restore_value: true
-  min_value: 0
-  max_value: 50
-  step: 0.0001
-  set_action:
-    lambda: id(rack_thermostat).set_ki( x );
+  # KP
+  - platform: template
+    name: kp
+    icon: mdi:chart-bell-curve
+    restore_value: true
+    min_value: 0
+    max_value: 50
+    step: 0.001
+    set_action:
+      lambda: |-
+        // ESP_LOGI("main", "!!!!!! kp from boot %d", id("rack_fan_kp") );
+        // id(rack_thermostat).set_kp( id("$friendly_name kp") );
+        id(rack_thermostat).set_kp( x );
+  # KI
+  - platform: template
+    name: ki
+    icon: mdi:chart-bell-curve
+    restore_value: true
+    min_value: 0
+    max_value: 50
+    step: 0.0001
+    set_action:
+      lambda: id(rack_thermostat).set_ki( x );
 
-# KD
-- platform: template
-  name: kd
-  icon: mdi:chart-bell-curve
-  restore_value: true
-  min_value: -50
-  max_value: 50
-  step: 0.001
-  set_action:
-    lambda: id(rack_thermostat).set_kd( x );
-
+  # KD
+  - platform: template
+    name: kd
+    icon: mdi:chart-bell-curve
+    restore_value: true
+    min_value: -50
+    max_value: 50
+    step: 0.001
+    set_action:
+      lambda: id(rack_thermostat).set_kd( x );
 
 ## Fan Output (PWM)
 output:
-- platform: esp8266_pwm
-  pin: D3
-  frequency: 25000Hz
-  id: fan_output
+  - platform: esp8266_pwm
+    pin: D3
+    frequency: 25000Hz
+    id: fan_output
 
 # ## Fan
 fan:
-- platform: speed
-  output: fan_output
-  name: Fan Speed
-  id: "${devicename}_fan"
-  speed_count: 100
+  - platform: speed
+    output: fan_output
+    name: Fan Speed
+    id: "${devicename}_fan"
+    speed_count: 100
 
 ## LED
 light:
-- platform: neopixelbus
-  type: GRBW
-  variant: WS2812
-  pin: GPIO3
-  num_leds: 30
-  name: Strip
-  id: strip
-  effects:
-  - pulse:
-      transition_length:
-        on_length: 1s
-        off_length: 500ms
-      update_interval: 1s
-      min_brightness: 15%
-      max_brightness: 70%
-  - addressable_scan:
-      scan_width: 5
-  - addressable_rainbow:
-  - addressable_color_wipe:
-      name: Police
-      colors:
-      - red: 100%
-        green: 0%
-        blue: 0%
-        white: 0%
-        num_leds: 5
-      - red: 0%
-        green: 0%
-        blue: 100%
-        white: 0%
-        num_leds: 5
-  - addressable_twinkle:
-      twinkle_probability: 10%
-      progress_interval: 20ms
-  - addressable_random_twinkle:
-      name: Random Twinkle
-      twinkle_probability: 10%
-      progress_interval: 20ms
-- platform: partition
-  id: strip_right
-  segments:
-    - id: strip
-      from: 0
-      to: 14
-  effects:
-  - addressable_scan:
-      move_interval: 3s
-- platform: partition
-  id: strip_left
-  segments:
-    - id: strip
-      from: 15
-      to: 29
-      reversed: true
-  effects:
-  - addressable_scan:
-      move_interval: 3s
+  - platform: neopixelbus
+    type: GRBW
+    variant: WS2812
+    pin: GPIO3
+    num_leds: 30
+    name: Strip
+    id: strip
+    effects:
+      - pulse:
+          transition_length:
+            on_length: 1s
+            off_length: 500ms
+          update_interval: 1s
+          min_brightness: 15%
+          max_brightness: 70%
+      - addressable_scan:
+          scan_width: 5
+      - addressable_rainbow:
+      - addressable_color_wipe:
+          name: Police
+          colors:
+            - red: 100%
+              green: 0%
+              blue: 0%
+              white: 0%
+              num_leds: 5
+            - red: 0%
+              green: 0%
+              blue: 100%
+              white: 0%
+              num_leds: 5
+      - addressable_twinkle:
+          twinkle_probability: 10%
+          progress_interval: 20ms
+      - addressable_random_twinkle:
+          name: Random Twinkle
+          twinkle_probability: 10%
+          progress_interval: 20ms
+  - platform: partition
+    id: strip_right
+    segments:
+      - id: strip
+        from: 0
+        to: 14
+    effects:
+      - addressable_scan:
+          move_interval: 3s
+  - platform: partition
+    id: strip_left
+    segments:
+      - id: strip
+        from: 15
+        to: 29
+        reversed: true
+    effects:
+      - addressable_scan:
+          move_interval: 3s
 
 ## I2C
 i2c:
@@ -134,181 +132,180 @@ bme680_bsec:
   sample_rate: ulp
 
 sensor:
-## BME680
-- platform: bme680_bsec
-  temperature:
-    id: bme680_temp
-    name: Temperature
-    sample_rate: lp
-    accuracy_decimals: 1
+  ## BME680
+  - platform: bme680_bsec
+    temperature:
+      id: bme680_temp
+      name: Temperature
+      sample_rate: lp
+      accuracy_decimals: 1
+      filters:
+        - median
+      on_value_range:
+        - below: 26
+          then:
+            - script.execute: led_blue
+        - above: 26
+          below: 30
+          then:
+            - script.execute: led_green
+        - above: 30
+          then:
+            - script.execute: led_red
+    pressure:
+      name: Pressure
+      sample_rate: lp
+      accuracy_decimals: 2
+      filters:
+        - median
+    humidity:
+      name: Humidity
+      sample_rate: lp
+      accuracy_decimals: 1
+      filters:
+        - median
+    iaq:
+      id: iaq
+
+  ## Fan speed
+  - platform: pulse_counter
+    pin: D4
+    name: Fan RPM
+    update_interval: 10s
+    unit_of_measurement: rpm
+    accuracy_decimals: 0
+    icon: "mdi:fan"
     filters:
-    - median
-    on_value_range:
-    - below: 26
-      then:
-      - script.execute: led_blue
-    - above: 26
-      below: 30
-      then:
-      - script.execute: led_green
-    - above: 30
-      then:
-      - script.execute: led_red
-  pressure:
-    name: Pressure
-    sample_rate: lp
+      - multiply: 0.5
+
+  # Take the "COOL" value of the pid and send
+  # it to the frontend to graph the output voltage
+  - platform: pid
+    id: fan_voltage
+    climate_id: rack_thermostat
+    type: COOL
+
+  ########################################################
+  # START THE FAN CONTROLLER SETUP
+
+  - platform: template
+    name: p term
+    id: p_term
+    unit_of_measurement: "%"
     accuracy_decimals: 2
-    filters:
-    - median
-  humidity:
-    name: Humidity
-    sample_rate: lp
-    accuracy_decimals: 1
-    filters:
-    - median
-  iaq:
-    id: iaq
 
-## Fan speed
-- platform: pulse_counter
-  pin: D4
-  name: Fan RPM
-  update_interval: 10s
-  unit_of_measurement: rpm
-  accuracy_decimals: 0
-  icon: "mdi:fan"
-  filters:
-  - multiply: 0.5
+  - platform: template
+    name: i term
+    id: i_term
+    unit_of_measurement: "%"
+    accuracy_decimals: 2
 
-# Take the "COOL" value of the pid and send
-# it to the frontend to graph the output voltage
-- platform: pid
-  id: fan_voltage
-  climate_id: rack_thermostat
-  type: COOL
+  - platform: template
+    name: d term
+    id: d_term
+    unit_of_measurement: "%"
+    accuracy_decimals: 2
 
-########################################################
-# START THE FAN CONTROLLER SETUP
+  - platform: template
+    name: output value
+    unit_of_measurement: "%"
+    id: o_term
+    accuracy_decimals: 2
 
-- platform: template
-  name: p term
-  id: p_term
-  unit_of_measurement: "%"
-  accuracy_decimals: 2
+  - platform: template
+    name: error value
+    id: e_term
+    accuracy_decimals: 2
 
-- platform: template
-  name: i term
-  id: i_term
-  unit_of_measurement: "%"
-  accuracy_decimals: 2
+  - platform: template
+    name: zero
+    id: zero_value
+    update_interval: 60s
+    lambda: |-
+      return 0;
 
-- platform: template
-  name: d term
-  id: d_term
-  unit_of_measurement: "%"
-  accuracy_decimals: 2
-
-- platform: template
-  name: output value
-  unit_of_measurement: "%"
-  id: o_term
-  accuracy_decimals: 2
-
-- platform: template
-  name: error value
-  id: e_term
-  accuracy_decimals: 2
-
-- platform: template
-  name: zero
-  id: zero_value
-  update_interval: 60s
-  lambda: |-
-    return 0;
-
-- platform: template
-  name: zero percent
-  unit_of_measurement: "%"
-  id: zero_value_percent
-  update_interval: 60s
-  lambda: |-
-    return 0;
+  - platform: template
+    name: zero percent
+    unit_of_measurement: "%"
+    id: zero_value_percent
+    update_interval: 60s
+    lambda: |-
+      return 0;
 
 text_sensor:
-- platform: template
-  name: "IAQ Classification"
-  icon: "mdi:checkbox-marked-circle-outline"
-  lambda: |-
-    if (int(id(iaq).state) <= 50) {
-      return {"Excellent"};
-    }
-    else if (int(id(iaq).state) <= 100) {
-      return {"Good"};
-    }
-    else if (int(id(iaq).state) <= 150) {
-      return {"Lightly polluted"};
-    }
-    else if (int(id(iaq).state) <= 200) {
-      return {"Moderately polluted"};
-    }
-    else if (int(id(iaq).state) <= 250) {
-      return {"Heavily polluted"};
-    }
-    else if (int(id(iaq).state) <= 350) {
-      return {"Severely polluted"};
-    }
-    else if (int(id(iaq).state) <= 500) {
-      return {"Extremely polluted"};
-    }
-    else {
-      return {"unknown"};
-    }
+  - platform: template
+    name: "IAQ Classification"
+    icon: "mdi:checkbox-marked-circle-outline"
+    lambda: |-
+      if (int(id(iaq).state) <= 50) {
+        return {"Excellent"};
+      }
+      else if (int(id(iaq).state) <= 100) {
+        return {"Good"};
+      }
+      else if (int(id(iaq).state) <= 150) {
+        return {"Lightly polluted"};
+      }
+      else if (int(id(iaq).state) <= 200) {
+        return {"Moderately polluted"};
+      }
+      else if (int(id(iaq).state) <= 250) {
+        return {"Heavily polluted"};
+      }
+      else if (int(id(iaq).state) <= 350) {
+        return {"Severely polluted"};
+      }
+      else if (int(id(iaq).state) <= 500) {
+        return {"Extremely polluted"};
+      }
+      else {
+        return {"unknown"};
+      }
 
 # Expose a PID-controlled Thermostat
 # Manual: https://esphome.io/components/climate/pid.html
 climate:
-- platform: pid
-  name: Thermostat
-  id: rack_thermostat
-  sensor: bme680_temp
+  - platform: pid
+    name: Thermostat
+    id: rack_thermostat
+    sensor: bme680_temp
 
-  # It is summer right now, so 30c is a decent target.
-  default_target_temperature: 28°C
-  cool_output: fan_output
+    # It is summer right now, so 30c is a decent target.
+    default_target_temperature: 28°C
+    cool_output: fan_output
 
-  on_state:
-    - sensor.template.publish:
-        id: p_term
-        state: !lambda 'return -id(rack_thermostat).get_proportional_term() * 100.0;'
-    - sensor.template.publish:
-        id: i_term
-        state: !lambda 'return -id(rack_thermostat).get_integral_term()* 100.0;'
-    - sensor.template.publish:
-        id: d_term
-        state: !lambda 'return -id(rack_thermostat).get_derivative_term()* 100.0;'
-    - sensor.template.publish:
-        id: o_term
-        state: !lambda 'return -id(rack_thermostat).get_output_value()* 100.0;'
-    - sensor.template.publish:
-        id: e_term
-        state: !lambda 'return -id(rack_thermostat).get_error_value();'
+    on_state:
+      - sensor.template.publish:
+          id: p_term
+          state: !lambda "return -id(rack_thermostat).get_proportional_term() * 100.0;"
+      - sensor.template.publish:
+          id: i_term
+          state: !lambda "return -id(rack_thermostat).get_integral_term()* 100.0;"
+      - sensor.template.publish:
+          id: d_term
+          state: !lambda "return -id(rack_thermostat).get_derivative_term()* 100.0;"
+      - sensor.template.publish:
+          id: o_term
+          state: !lambda "return -id(rack_thermostat).get_output_value()* 100.0;"
+      - sensor.template.publish:
+          id: e_term
+          state: !lambda "return -id(rack_thermostat).get_error_value();"
 
-  # dummy heater. enable this if using autotune
-  # heat_output: rack_heat_speed
+    # dummy heater. enable this if using autotune
+    # heat_output: rack_heat_speed
 
-  # The extents of the HA Thermostat
-  visual:
-    min_temperature: 20 °C
-    max_temperature: 40 °C
+    # The extents of the HA Thermostat
+    visual:
+      min_temperature: 20 °C
+      max_temperature: 40 °C
 
-  # See the README for setting up these parameters.
-  # These are over ridden by the number templates above.
-  control_parameters:
-    kp: 0.15
-    ki: 0.004
-    kd: 0.5
-    max_integral: 0.0
-
+    # See the README for setting up these parameters.
+    # These are over ridden by the number templates above.
+    control_parameters:
+      kp: 0.15
+      ki: 0.004
+      kd: 0.5
+      max_integral: 0.0
 
 ## Automations
 script:
@@ -324,75 +321,75 @@ script:
   #       effect: pulse
   - id: led_blue
     then:
-    - light.turn_off: strip
-    - light.turn_on:
-        id: strip_left
-        red: 0
-        blue: 1
-        green: 0
-        white: 0
-        effect: Scan
-        brightness: .6
-    - light.turn_on:
-        id: strip_right
-        red: 0
-        blue: 1
-        green: 0
-        white: 0
-        effect: Scan
-        brightness: .6
+      - light.turn_off: strip
+      - light.turn_on:
+          id: strip_left
+          red: 0
+          blue: 1
+          green: 0
+          white: 0
+          effect: Scan
+          brightness: .6
+      - light.turn_on:
+          id: strip_right
+          red: 0
+          blue: 1
+          green: 0
+          white: 0
+          effect: Scan
+          brightness: .6
   - id: led_green
     then:
-    - light.turn_off: strip
-    - light.turn_on:
-        id: strip_left
-        red: 0
-        blue: 0
-        green: 1
-        white: 0
-        effect: Scan
-        brightness: .6
-    - light.turn_on:
-        id: strip_right
-        red: 0
-        blue: 0
-        green: 1
-        white: 0
-        effect: Scan
-        brightness: .6
+      - light.turn_off: strip
+      - light.turn_on:
+          id: strip_left
+          red: 0
+          blue: 0
+          green: 1
+          white: 0
+          effect: Scan
+          brightness: .6
+      - light.turn_on:
+          id: strip_right
+          red: 0
+          blue: 0
+          green: 1
+          white: 0
+          effect: Scan
+          brightness: .6
   - id: led_red
     then:
-    - light.turn_off: strip_left
-    - light.turn_off: strip_right
-    - light.turn_on:
-        id: strip
-        red: 1
-        blue: 0
-        green: 0
-        white: 0
-        effect: Pulse
-        brightness: .6
+      - light.turn_off: strip_left
+      - light.turn_off: strip_right
+      - light.turn_on:
+          id: strip
+          red: 1
+          blue: 0
+          green: 0
+          white: 0
+          effect: Pulse
+          brightness: .6
   - id: led_pink
     then:
-    - light.turn_off: strip_left
-    - light.turn_off: strip_right
-    - light.turn_on:
-        id: strip
-        red: 1
-        blue: 1
-        green: 0
-        white: 0
-        effect: Pulse
-        brightness: .6
+      - light.turn_off: strip_left
+      - light.turn_off: strip_right
+      - light.turn_on:
+          id: strip
+          red: 1
+          blue: 1
+          green: 0
+          white: 0
+          effect: Pulse
+          brightness: .6
   - id: led_yellow
     then:
-    - light.turn_off: strip_left
-    - light.turn_off: strip_right
-    - light.turn_on:
-        id: strip
-        red: 1
-        blue: 0
-        green: 1
-        white: 0
-        effect: Pulse
-        brightness: .6
+      - light.turn_off: strip_left
+      - light.turn_off: strip_right
+      - light.turn_on:
+          id: strip
+          red: 1
+          blue: 0
+          green: 1
+          white: 0
+          effect: Pulse
+          brightness: .6

@@ -13,42 +13,42 @@ bme680_bsec:
   sample_rate: lp
 
 sensor:
-- platform: bme680_bsec
-  temperature:
-    name: "${devicename_upper} Temperature"
-    filters:
-      - median
-  humidity:
-    name: "${devicename_upper} Humidity"
-    filters:
-      - median
-  pressure:
-    name: "${devicename_upper} Pressure"
-    filters:
-      - median
-  co2_equivalent:
-    # CO2 equivalent estimate in ppm
-    name: "${devicename_upper} CO2 Equivalent"
-    filters:
-      - median
-  breath_voc_equivalent:
-    # Volatile organic compounds equivalent estimate in ppm
-    name: "${devicename_upper} Breath VOC Equivalent"
-    filters:
-      - median
+  - platform: bme680_bsec
+    temperature:
+      name: "${devicename_upper} Temperature"
+      filters:
+        - median
+    humidity:
+      name: "${devicename_upper} Humidity"
+      filters:
+        - median
+    pressure:
+      name: "${devicename_upper} Pressure"
+      filters:
+        - median
+    co2_equivalent:
+      # CO2 equivalent estimate in ppm
+      name: "${devicename_upper} CO2 Equivalent"
+      filters:
+        - median
+    breath_voc_equivalent:
+      # Volatile organic compounds equivalent estimate in ppm
+      name: "${devicename_upper} Breath VOC Equivalent"
+      filters:
+        - median
 
-## Brightness
-- platform: adc
-  pin: A0
-  name: "${devicename_upper} Illuminance"
-  unit_of_measurement: lx
-  filters:
-  - lambda: |-
-      return (x / 10000.0) * 2000000.0;
+  ## Brightness
+  - platform: adc
+    pin: A0
+    name: "${devicename_upper} Illuminance"
+    unit_of_measurement: lx
+    filters:
+      - lambda: |-
+          return (x / 10000.0) * 2000000.0;
 
 ## PIR Motion Sensor
 binary_sensor:
-- platform: gpio
-  pin: D8
-  name: "${devicename_upper} PIR"
-  device_class: motion
+  - platform: gpio
+    pin: D8
+    name: "${devicename_upper} PIR"
+    device_class: motion

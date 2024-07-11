@@ -58,13 +58,13 @@ globals:
     initial_value: "true"
   - id: aab_add
     type: int
-    initial_value: '10'
+    initial_value: "10"
   - id: aab_max
     type: int
-    initial_value: '220'
+    initial_value: "220"
   - id: aab_min
     type: int
-    initial_value: '20'
+    initial_value: "20"
   # gdh = getting dressed hint
   - id: gdh_enable
     type: "bool"
@@ -77,7 +77,7 @@ external_components:
       url: https://github.com/lubeda/EspHoMaTriXv2
       ref: 2024.3.0
     refresh: 60s
-    components: [ ehmtxv2 ]
+    components: [ehmtxv2]
 
 esphome:
   comment: "EHMTXv2 from LuBeDa"
@@ -100,8 +100,8 @@ esp32:
   board: esp32dev
 
 image:
-   - file: 1pixel.gif
-     id: breaking20237
+  - file: 1pixel.gif
+    id: breaking20237
 
 animation:
   - file: 1pixel.gif
@@ -120,11 +120,11 @@ font:
   # Store in a "fonts" subfolder of your ESPHome config folder or change paths below
   - file: fonts/MatrixLight6.bdf
     id: default_font
-    glyphs:  |
+    glyphs: |
       ! "#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¦§©ª«®°±²³´µ¶¥·¹º»¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ
   - file: fonts/MatrixLight8.bdf
     id: special_font
-    glyphs:  |
+    glyphs: |
       ! "#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¦§©ª«®°±²³´µ¶¥·¹º»¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ
 
 binary_sensor:
@@ -181,7 +181,7 @@ sensor:
           if (r > 0) return r;
           if (r <= 0) return 1;
           return 0;
-    unit_of_measurement: '%'
+    unit_of_measurement: "%"
   - platform: adc
     id: light_sensor
     name: "$devicename Illuminance"
@@ -250,34 +250,34 @@ time:
         hours: 6
         days_of_week: MON-FRI
         then:
-        - lambda: |-
-            auto time = id(ehmtx_time).now();
-            if (id(gdh_enable)) {
-              // Super sophisticated percentage calculation for RED value
-              int s = time.second + (time.minute - 45) * 60;
-              int r = s / 900 * 255;
-              id(rgb8x32)->set_clock_color(r, 255, 0);
-            }
+          - lambda: |-
+              auto time = id(ehmtx_time).now();
+              if (id(gdh_enable)) {
+                // Super sophisticated percentage calculation for RED value
+                int s = time.second + (time.minute - 45) * 60;
+                int r = s / 900 * 255;
+                id(rgb8x32)->set_clock_color(r, 255, 0);
+              }
       - seconds: /10
         minutes: 0-10
         hours: 7
         days_of_week: MON-FRI
         then:
-        - lambda: |-
-            auto time = id(ehmtx_time).now();
-            if (id(gdh_enable)) {
-              // Super sophisticated percentage calculation for GREEN value
-              int s = time.second + time.minute * 60;
-              int g = 255 - s / 600 * 255;
-              id(rgb8x32)->set_clock_color(255, g, 0);
-            }
+          - lambda: |-
+              auto time = id(ehmtx_time).now();
+              if (id(gdh_enable)) {
+                // Super sophisticated percentage calculation for GREEN value
+                int s = time.second + time.minute * 60;
+                int g = 255 - s / 600 * 255;
+                id(rgb8x32)->set_clock_color(255, g, 0);
+              }
       - seconds: 0
         minutes: 15
         hours: 7
         days_of_week: MON-FRI
         then:
-        - lambda: |-
-            id(rgb8x32)->set_clock_color(255, 255, 255);
+          - lambda: |-
+              id(rgb8x32)->set_clock_color(255, 255, 255);
 
 display:
   - platform: addressable_light

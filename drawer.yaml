@@ -11,20 +11,19 @@ i2c:
   scan: true
 
 sensor:
-## BME680
-- platform: bme680
-  temperature:
-    name: "${devicename_upper} Temperature"
-    oversampling: 16x
-  pressure:
-    name: "${devicename_upper} Pressure"
-  humidity:
-    name: "${devicename_upper} Humidity"
-  gas_resistance:
-    name: "${devicename_upper} Gas Resistance"
-  address: 0x77
-  update_interval: 60s
-
+  ## BME680
+  - platform: bme680
+    temperature:
+      name: "${devicename_upper} Temperature"
+      oversampling: 16x
+    pressure:
+      name: "${devicename_upper} Pressure"
+    humidity:
+      name: "${devicename_upper} Humidity"
+    gas_resistance:
+      name: "${devicename_upper} Gas Resistance"
+    address: 0x77
+    update_interval: 60s
 
 ## 433 MHz
 
@@ -43,91 +42,88 @@ remote_transmitter:
   id: rt433mhz
 
 button:
-- platform: template
-  name: Stehlampe AN
-  on_press:
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010001010101010101'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
-- platform: template
-  name: Stehlampe AUS
-  on_press:
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010001010101010100'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
+  - platform: template
+    name: Stehlampe AN
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010001010101010101"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
+  - platform: template
+    name: Stehlampe AUS
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010001010101010100"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
 
-- platform: template
-  name: Brettspiele AN
-  on_press:
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010100010101010101'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010101000101010101'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
-- platform: template
-  name: Brettspiele AUS
-  on_press:
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010100010101010100'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010101000101010100'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
+  - platform: template
+    name: Brettspiele AN
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010100010101010101"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010101000101010101"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
+  - platform: template
+    name: Brettspiele AUS
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010100010101010100"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010101000101010100"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
 
-- platform: template
-  name: Subwoofer AN
-  on_press:
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010101010001010101'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
-- platform: template
-  name: Subwoofer AUS
-  on_press:
-  - remote_transmitter.transmit_rc_switch_raw:
-      code: '000101010101010001010100'
-      protocol: 1
-      transmitter_id: rt433mhz
-      repeat:
-        times: 10
-        wait_time: 0s
-
-
+  - platform: template
+    name: Subwoofer AN
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010101010001010101"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
+  - platform: template
+    name: Subwoofer AUS
+    on_press:
+      - remote_transmitter.transmit_rc_switch_raw:
+          code: "000101010101010001010100"
+          protocol: 1
+          transmitter_id: rt433mhz
+          repeat:
+            times: 10
+            wait_time: 0s
 # Channel I
 #      ON OFF
 # 1381717 1381716
 # 1394005 1394004
 # 1397077 1397076
 # 1397845 1397844
-
 
 # Channel II
 #      ON OFF
@@ -136,14 +132,12 @@ button:
 # 4542805 4542804
 # 4543573 4543572
 
-
 # Channel III
 #      ON OFF
 # 5313877 5313876
 # 5326165 5326164
 # 5329237 5329236
 # 5330005 5330004
-
 
 # Channel IV
 #      ON OFF
